@@ -7,7 +7,7 @@ import lxml, time
 from string import *
 from urllib2 import Request
 
-from seo.exceptions import SeoException
+from seo import SeoException
 
 class NetworkException(SeoException):
 	pass

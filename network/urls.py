@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import re,  time, urllib, urlparse
-from network import NetworkException
+from pylibs.network import NetworkException
 
 class UrlsException(NetworkException):
 	pass

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from network import NetworkException
+from pylibs.network import NetworkException
 from lxml.cssselect import CSSSelector
 from lxml import etree, html
 import lxml, time, re

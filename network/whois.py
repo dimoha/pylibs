@@ -5,7 +5,7 @@
 #####################################################################
 
 import sys, time, re, socket, optparse
-from network import NetworkException
+from pylibs.network import NetworkException
 
 class WhoIsException(NetworkException):
 	pass

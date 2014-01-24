@@ -62,7 +62,7 @@ class Browser():
 		self.name = str(id(self))
 		self.page_handler = None
 		self.maxredirs = 10
-		self.headers = []
+		self.pages_headers = []
 		self.block_cookie = True
 		self.current_cookies = {}
 		self.curl = None
@@ -272,8 +272,8 @@ class Browser():
 			if self.proxy_type == 'socks5':
 				curl.setopt(pycurl.PROXYTYPE, pycurl.PROXYTYPE_SOCKS5)
 
-		if self.headers:
-			curl.setopt(pycurl.HTTPHEADER, self.headers)
+		if self.pages_headers:
+			curl.setopt(pycurl.HTTPHEADER, self.pages_headers)
 
 		if self.user_pwd is not None:
 			curl.setopt(pycurl.USERPWD, self.user_pwd)
@@ -284,7 +284,7 @@ class Browser():
 		message = e[1]
 		code = e[0]
 		known = {
-			6:CannotResolve(domain(self.perform_url)),
+			6:CannotResolve(get_domain(self.perform_url)),
 			28:ConnectionTimeOut(message+' ('+self.perform_url+')')
 		}
 		
@@ -408,10 +408,16 @@ class Browser():
 	def body(self):
 		return self._body.getvalue()	
 	
-	def header(self):
+	@property
+	def headers(self):
 		allheaders =  self._header.getvalue()
 		headers = allheaders.split("\r\n\r\nH")
-		return headers[-1].strip()
+		headers_dict = {}
+		for v in  headers[-1].strip().split("\r\n"):
+			v = v.split(": ") if ": " in v else [v]
+			if len(v) == 2:
+				headers_dict[v[0]] = v[1]
+		return headers_dict
 
 	def html(self):
 		if self._html is None:

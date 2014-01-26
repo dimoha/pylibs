@@ -14,7 +14,7 @@ class PyLibsException(Exception):
 				msg = ""
 			msg = self.args
 		else:
-		    msg = msg.encode('utf-8')
+		    msg = str(msg).encode('utf-8')
 		self.message = msg
 		self.errno = errno
 		if self.errno is not None:

@@ -2,7 +2,7 @@
 from pylibs.network import NetworkException
 from pylibs.network.parser import *
 from pylibs.network.urls import *
-import iconv, pycurl, re, os, cookielib, time, urllib,  json
+import pycurl, re, os, cookielib, time, urllib,  json
 from cStringIO import StringIO
 from urllib2 import Request
 
@@ -445,7 +445,7 @@ class Browser():
 		s = re.sub('<!--.*?-->(?is)', ' ', s);
 		s = s.replace("\r\n", "\n")
 		
-		h = self.header()
+		h = self._header.getvalue()
 
 	
 		# detecting encoding by header

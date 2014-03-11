@@ -350,6 +350,7 @@ class Browser():
 			    to_send = map(lambda x: tuple(x.split('=')) if '=' in x else (x, '') , postdata.split('&'))
 			for filename in files:
 				to_send.append((os.path.basename(filename), (curl.FORM_FILE, filename)))				
+			print to_send
 			curl.setopt(curl.HTTPPOST, to_send)
 	
 		

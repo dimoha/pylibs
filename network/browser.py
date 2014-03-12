@@ -442,8 +442,8 @@ class Browser():
 		enc = ''
 	
 
-		s = re.sub('<!--\s*([/]?)noindex\s*-->(?is)', '<\\1noindex>', self.body())
-		s = re.sub('<!--.*?-->(?is)', ' ', s);
+		#s = re.sub('<!--\s*([/]?)noindex\s*-->(?is)', '<\\1noindex>', self.body())
+		#s = re.sub('<!--.*?-->(?is)', ' ', s);
 		s = s.replace("\r\n", "\n")
 		
 		h = self._header.getvalue()

@@ -24,12 +24,12 @@ def funzip(from_file, to_file = None, need_remove = True):
         os.remove(from_file)
         
 
-def to_gzip(from_file, to_file = None, need_remove = True):
+def to_gzip(from_file, to_file = None, need_remove = True, compresslevel = 5):
     if to_file is None:
         to_file = '%s.gz' % from_file 
         
     f_in = open(from_file, 'rb')
-    f_out = gzip.open(to_file, 'wb')
+    f_out = gzip.open(to_file, 'wb', compresslevel = compresslevel)
     f_out.writelines(f_in)
     f_out.close()
     f_in.close()

@@ -17,6 +17,7 @@ from pylibs.utils.tools import processecControl, kill_process
 
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
+import selenium.webdriver.support.ui as ui
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -24,8 +25,10 @@ from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey, Dat
 Base = declarative_base()
 sql_engine = None
 
+class SeleniumException(Exception):
+    pass
 
-class SeleniumServerException(Exception):
+class SeleniumServerException(SeleniumException):
     pass
 
 class NoBrowsers(SeleniumServerException):
@@ -39,6 +42,53 @@ class CaptchaException(SeleniumServerException):
 
 class DigitalOceanException(SeleniumServerException):
     pass
+
+class SeleniumBrowserException(SeleniumException):
+    pass
+
+class SeleniumBrowser(object):
+    """
+    Имитирует интерфейс класса pylibs.network.browser.Browser
+    """
+    def __init__(self, server_host, server_port):
+        self.server_host = server_host
+        self.server_port = server_port
+
+    def get(self, url):
+        response = ''
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(60)
+        debug('try connect...')
+        s.connect((self.server_host, self.server_port))
+        debug('try send..')
+        s.sendall(url)
+        debug('sended. wait response...')
+
+        block_len = 1448
+        while True:
+            data = s.recv(block_len)
+            response += data
+            if data is None or len(data)==0:
+                break
+        s.close()
+
+        debug("response zip length: %s" % len(response))
+
+        response = response.decode("zlib")
+        self.response = json.loads(response)
+        if 'errnum' in response:
+            raise SeleniumBrowserException(self.response['message'])
+
+    def unicode(self):
+        return self.response['result']['html']
+
+    def body(self):
+        return self.unicode().encode('utf-8')
+
+    @property
+    def effective_url(self):
+        return self.response['result']['effective_url']
 
 
 class SeleniumSession(Base):
@@ -117,8 +167,8 @@ class SeleniumDefaultTCPHandler(SocketServer.BaseRequestHandler):
         br.get(url)
         return br.driver.page_source
 
-    def __prepare_response(self, response):
-        response = {'result':response}
+    def __prepare_response(self, response, effective_url):
+        response = {'result':{'html':response, 'effective_url':effective_url}}
         return response
 
     def __send_response(self, response):
@@ -147,7 +197,10 @@ class SeleniumDefaultTCPHandler(SocketServer.BaseRequestHandler):
                 page_source = self.__get_url(br, url)
                 info("__get_url fiinished at %s sec" % (time.time()-st, ))
 
-                response = self.__prepare_response(page_source)
+                effective_url = br.driver.current_url
+                info("effective url fiinished at %s sec (%s)" % (time.time()-st, effective_url))
+
+                response = self.__prepare_response(page_source, effective_url)
                 info("__prepare_response finished at %s sec" % (time.time()-st, ))
             except Exception as e:
                 response = str(e)
@@ -249,7 +302,7 @@ def reboot_server(server, pool):
 
 
 class Server():
-    reboot_minutes = 1
+    reboot_minutes = 15
     reboot_exec_sec = 60
 
     def __init__(self, host, cnt_servers, client_id, api_key, server_num):
@@ -385,6 +438,9 @@ class RemoteBrowser():
     def reboot_server(self):
         self.need_reboot_server = True
 
+    def _setup_browser(self):
+        pass
+
     def connect(self):
 
         # close old session if exists
@@ -416,6 +472,8 @@ class RemoteBrowser():
         else:
             self.id = self.existed_session.id
 
+        self._setup_browser()
+
     def execute_js_with_jquery(self, js):
         self.driver.execute_script("""
             function addJQuery(callback) {
@@ -433,6 +491,10 @@ class RemoteBrowser():
             }
             addJQuery(main)
         """ % js)
+
+    def wait_element_by_xpath(self, xpath, timeout = 10):
+        wait = ui.WebDriverWait(self.driver, timeout)
+        return wait.until(lambda driver: driver.find_element_by_xpath(xpath))
 
     def prepare(self):
         if self.driver is None or self.count_requests>self.reconnect_requests_limit:
@@ -529,30 +591,8 @@ def serve_pool(pool, host, port):
 
     info("Browser pool stopped.")
     listener.close()
-"""
-def check_db():
-    metadata = SeleniumSession.metadata
-    metadata.create_all(sql_engine)
-    session = get_sql_session()
-    try:
-        first_session = session.query(SeleniumSession).first()
-    except Exception as e:
-        warning("SQLLite Database not created. Do it.")
-        if 'no such table' in str(e) or "":
-            metadata = SeleniumSession.metadata
-            metadata.create_all(sql_engine)
-            ses = SeleniumSession(server = "test", session_id = "test_id", create_date = datetime.now(), cnt_requests = 0, cnt_captcha = 0, last_request_date = datetime.now())
-            session.add(ses)
 
-            print "==============="
-            print session.query(SeleniumSession).all()
-            for instance in session.query(SeleniumSession).all():
-                print instance.create_date
-            print "==============="
-        else:
-            print "Undefined error"
-            raise
-"""
+
 def get_sql_engine(DATABASE):
     return create_engine('%s://%s:%s@%s/%s' % (DATABASE['type'], DATABASE['user'],\
         DATABASE['passwd'], DATABASE['host'], DATABASE['db']), echo=False) 
@@ -561,7 +601,7 @@ def get_sql_session(DATABASE):
     sql_engine = get_sql_engine(DATABASE)
     return sessionmaker(bind=sql_engine)()
 
-def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = None, PORT_2 = None):
+def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = None, PORT_2 = None, remote_browser = None):
     
 
     # create table if not exists
@@ -570,6 +610,9 @@ def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = Non
 
     if tcp_handler is None:
         tcp_handler = SeleniumDefaultTCPHandler
+
+    if remote_browser is None:
+        remote_browser = RemoteBrowser
 
     proc_name = 'SocketServer'
     pool_name = 'BrowserPoolManager'
@@ -667,7 +710,7 @@ def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = Non
                 name = "Browser %s" % num
                 info('%s at %s' % (name, ip))
                 existed_session = sessions.pop() if len(sessions)>0 else None
-                br = RemoteBrowser(name, srv, port, db_config = DATABASE, session=existed_session)
+                br = remote_browser(name, srv, port, db_config = DATABASE, session=existed_session)
                 pool.add(br)
             if len(sessions)>0:
                 warning("Excess %s sessions in %s. Remove it from DataBase" % (len(sessions), ip))

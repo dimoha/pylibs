@@ -224,6 +224,8 @@ class SeleniumDefaultTCPHandler(SocketServer.BaseRequestHandler):
                     response = "Selenium can't connect to browser."
                     warning("Send server %s to reboot, because %s, TRACE: %s" % (br.server.server_name, e, trace))
                     need_reboot_server = True
+                else:
+                    warning(trace)
 
                 response = {"errnum":1, "message":response} 
             finally:
@@ -425,7 +427,7 @@ def reboot_server(server, pool):
 
 
 class Server():
-    reboot_minutes = 3
+    reboot_minutes = 30
     reboot_exec_sec = 90
 
     def __init__(self, host, cnt_servers, client_id, api_key, server_num):
@@ -706,6 +708,7 @@ def serve_pool(pool, host, port):
                     br.unset_busy()
                 pool.update(br)
             conn.close()
+            debug("serve_pool conn close")
         except Exception as e:
             info('%s exception: %s' % (pool.name, e))
 

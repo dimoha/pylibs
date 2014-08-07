@@ -141,22 +141,43 @@ class YandexMarketWeb(Yandex):
             if self.region.lower() != current_region.lower():
                 raise YandexMarketWebException("Incorrect region: %s (need %s)" % (current_region, self.region))
 
+    def get_popular_list(self, hid):
+        url = '%s/catalog.xml?hid=%s&track=pieces' % (self.host, hid)
+        html = self.request(url)
+        self.check_region()
+
+        popular_link = at_xpath(self.html, u'//a[@class="top-3-models__title-link" and contains(text(), "Популярные")]').attrib['href']
+        popular_link = '%s%s'  % (self.host, popular_link)
+        info("popular_link: %s" % popular_link) 
+        return self.get_products_list(popular_link)
+
     def get_products_list(self, url, limit=200):
         
+        try_cnt = 6
         products = []
         while True:
             
-            html = self.request(url)
+            for i in range(try_cnt):
+                try:
+                    html = self.request(url)
+                    break
+                except Exception as e:
+                    if i == (try_cnt-1):
+                        raise
+                    else:
+                        warning("get_products_list error %s: %s" % (i, e))
+                        continue
+            
             self.check_region()
 
             positions = css(html, 'div.b-offers_type_guru')
             for position in positions:
                 if 'id' in position.attrib:
                     model_id = int(position.attrib['id'])
-                    product_link = at_xpath(position, '//a[@id="item-href-%s"]' % model_id)
-                    product_name = element_text(product_link)
+                    product_link = at_xpath(position, './/a[@id="item-href-%s"]' % model_id)
+                    product_name = toUnicode(element_text(product_link))
                     product_href = '%s%s' % (self.host, product_link.attrib['href'])
-                    debug("%s | %s | %s" % (model_id, product_name, product_href)) 
+                    #debug("%s | %s | %s" % (model_id, product_name, product_href)) 
 
                     product = {'model_id':model_id, 'product_name':product_name, 'product_href':product_href}
                     products.append(product)
@@ -175,6 +196,7 @@ class YandexMarketWeb(Yandex):
         cat_name = element_text(at_xpath(html, '//span[@itemprop="title"]'))
         debug("category: %s" % cat_name)
         debug("parsed: %s positions" % len(products))
+        return products
 
     def parse_model_offers_page(self, model_id, hid = None):
         params = {'modelid':model_id}
@@ -197,18 +219,18 @@ class YandexMarketWeb(Yandex):
         offers = []
         offers_info_list = css(html, 'div.b-offers__offers')
         for offer in offers_info_list:
-            price = element_text(at_xpath(offer, '//span[@class="b-old-prices__num"]'))
+            price = element_text(at_xpath(offer, './/span[@class="b-old-prices__num"]'))
             price = float(re.sub("[^\d\.]+(?is)", "", price.replace(",", ".")))
             shop_name = toUnicode(element_text(at_css(offer, 'div.b-offers__feats a.shop-link')))
             product_name = toUnicode(element_text(at_css(offer, 'a.b-offers__name')))
-            delivery_data = toUnicode(element_text(at_css(offer, 'div.b-offers__delivery')))
+            delivery_info = toUnicode(element_text(at_css(offer, 'div.b-offers__delivery')))
             delivery_cost = None
-            m = re.search(u'Доставка\s+(.+)\s+руб(?isu)', delivery_data)
+            m = re.search(u'Доставка\s+(.+)\s+руб(?isu)', delivery_info)
             if m:
                 delivery_cost = m.group(1).strip().replace(",", ".")
                 delivery_cost = float(re.sub("[^\d\.]+(?is)", "", delivery_cost))
             
-            offers.append({'price':price, 'shop_name':shop_name, 'product_name':product_name, "delivery_cost":delivery_cost})
+            offers.append({'price':price, 'shop_name':shop_name, 'product_name':product_name, "delivery_cost":delivery_cost, "delivery_info":delivery_info})
 
         info("Found %s offers" % len(offers))
         return {'breadcrumbs':breadcrumbs, "offers":offers}

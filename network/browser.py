@@ -5,7 +5,7 @@ from pylibs.network.urls import *
 import pycurl, re, os, cookielib, time, urllib,  json
 from cStringIO import StringIO
 from urllib2 import Request
-
+from logging import debug, info, warning, error
 
 class BrowserException(NetworkException):
 	pass
@@ -89,7 +89,7 @@ class Browser():
 	
 	def printCookies(self, jar = None):
 		for cookie in jar or self.getCookieJar():
-			print cookie.name + "=" + str(cookie.value)
+			debug(cookie.name + "=" + str(cookie.value))
 	
 	
 	###################### special class for extract_cookies
@@ -350,7 +350,7 @@ class Browser():
 			    to_send = map(lambda x: tuple(x.split('=')) if '=' in x else (x, '') , postdata.split('&'))
 			for filename in files:
 				to_send.append((os.path.basename(filename), (curl.FORM_FILE, filename)))				
-			print to_send
+			debug(to_send)
 			curl.setopt(curl.HTTPPOST, to_send)
 	
 		

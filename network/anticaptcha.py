@@ -17,17 +17,22 @@ class AntigateNotAvailable(AntiCaptchaException):
 class AntiGate():
     host = 'rucaptha.com'
 
-    def __init__(self, url, key, br = None, host = None):
+    def __init__(self, key, url = None, br = None, host = None, img_data = None):
         self.br = Browser() if br is None else br
         self.key = key
         self.url = url
+        self.img_data = img_data
         if host is not None:
             self.host = host
 
     def solve(self):
         
-        self.br.get(self.url)
-        self.captcha_data = self.br.body()
+        if self.img_data is None:
+            self.br.get(self.url)
+            self.captcha_data = self.br.body()
+        else:
+            self.captcha_data = self.img_data
+
         debug("file downloaded!")
         fsize = len(self.captcha_data)
         debug('fsize: %s' % fsize)
@@ -134,8 +139,8 @@ Content-Type: image/jpeg
 
 
 
-def solveImgUrl(captcha_url, key, br = None, host = None):
-    a = AntiGate(captcha_url, key, br, host)
+def solveImgUrl(key, captcha_url = None, br = None, host = None, img_data = None):
+    a = AntiGate(key, captcha_url, br, host, img_data)
     return a.solve()
 
 

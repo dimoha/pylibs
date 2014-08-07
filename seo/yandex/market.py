@@ -3,6 +3,7 @@ from seo.yandex import YandexException, Yandex
 from pylibs.network.parser import *
 from pylibs.network.urls import *
 from pylibs.network.browser import BrowserException
+from pylibs.utils.text import toUnicode
 from logging import info, debug, warning
 import re, json, urllib, math
 
@@ -123,7 +124,7 @@ class YandexMarketWeb(Yandex):
     def __init__(self, *args, **kwargs):
         self.region = kwargs['region']
         del kwargs['region']
-        super(YandexMarket, self).__init__(*args, **kwargs)
+        super(YandexMarketWeb, self).__init__(*args, **kwargs)
 
 
     def get_region(self):
@@ -175,7 +176,43 @@ class YandexMarketWeb(Yandex):
         debug("category: %s" % cat_name)
         debug("parsed: %s positions" % len(products))
 
-        
+    def parse_model_offers_page(self, model_id, hid = None):
+        params = {'modelid':model_id}
+        if hid is not None:
+            params['hid'] = hid
+        params = urllib.urlencode(params)
+        page_url = '%s/offers.xml?%s' % (self.host, params)
+        debug(page_url)
 
+        html = self.request(page_url)
+        self.check_region()
         
+        breadcrumbs = []
+        breadcrumbs_a = xpath(html, '//a[@class="b-breadcrumbs__link"]')
+        for a in breadcrumbs_a:
+            breadcrumbs.append({'url':a.attrib['href'].decode('utf-8'), 'title':element_text(a).decode('utf-8')})
+        
+        info("breadcrumbs: %s" % repr(breadcrumbs).decode("unicode-escape"))
+
+        offers = []
+        offers_info_list = css(html, 'div.b-offers__offers')
+        for offer in offers_info_list:
+            price = element_text(at_xpath(offer, '//span[@class="b-old-prices__num"]'))
+            price = float(re.sub("[^\d\.]+(?is)", "", price.replace(",", ".")))
+            shop_name = toUnicode(element_text(at_css(offer, 'div.b-offers__feats a.shop-link')))
+            product_name = toUnicode(element_text(at_css(offer, 'a.b-offers__name')))
+            delivery_data = toUnicode(element_text(at_css(offer, 'div.b-offers__delivery')))
+            delivery_cost = None
+            m = re.search(u'Доставка\s+(.+)\s+руб(?isu)', delivery_data)
+            if m:
+                delivery_cost = m.group(1).strip().replace(",", ".")
+                delivery_cost = float(re.sub("[^\d\.]+(?is)", "", delivery_cost))
+            
+            offers.append({'price':price, 'shop_name':shop_name, 'product_name':product_name, "delivery_cost":delivery_cost})
+
+        info("Found %s offers" % len(offers))
+        return {'breadcrumbs':breadcrumbs, "offers":offers}
+
+
+
         

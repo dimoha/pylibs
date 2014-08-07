@@ -27,13 +27,15 @@ class Yandex(object):
         return self.html
 
     def is_captcha(self):
-        if re.search('yandex.[^/]+/showcaptcha', self.transport.effective_url)\
-            or re.search('captcha.yandex.', self.transport.effective_url):
-            captcha_found = True
-        else:
-            captcha_found = False
+        return Yandex.is_yandex_captcha(self.transport.effective_url)
 
-        return captcha_found
+    @staticmethod
+    def is_yandex_captcha(effective_url):
+        if re.search('yandex.[^/]+/showcaptcha', effective_url)\
+            or re.search('captcha.yandex.', effective_url):
+            return True
+        else:
+            return False
 
     def __get_captcha_form(self):
         form = at_css(self.html, "div.b-captcha form")
@@ -69,8 +71,8 @@ class Yandex(object):
             raise YandexException('Not found src attribute of captcha image element.')
 
         debug('captcha_url: %s' % captcha_url)
-        captcha_value = solveImgUrl(captcha_url, self.anticaptcha_key,\
-        	self.transport, self.anticaptcha_host)
+        captcha_value = solveImgUrl(self.anticaptcha_key, captcha_url=captcha_url,\
+            br=self.transport, host=self.anticaptcha_host)
         
         debug('captcha_value: %s' % captcha_value)
 

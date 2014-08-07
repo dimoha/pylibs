@@ -4,17 +4,20 @@ from multiprocessing.connection import Client
 from multiprocessing.connection import Listener
 from multiprocessing import Process
 from logging import debug, info, warning, error, critical
-import json, SocketServer, sys, time, zlib, socket, urlparse, threading, urllib
+import json, SocketServer, sys, time, zlib, socket, urlparse, threading, urllib, base64, StringIO, traceback
+from PIL import Image
 from getopt import getopt, GetoptError
 
 from setproctitle import setproctitle
 from copy import deepcopy
 
+from pylibs.utils.text import toUnicode
 from pylibs.utils.decorators import lock, cached_property
 from pylibs.utils.botmanager import MultiThreadsTasksManager
 from pylibs.network.urls import get_domain
 from pylibs.utils.tools import processecControl, kill_process
-
+from pylibs.seo.yandex import Yandex
+from pylibs.network.anticaptcha import AntigateNotAvailable, solveImgUrl
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
 import selenium.webdriver.support.ui as ui
@@ -163,7 +166,7 @@ class SeleniumDefaultTCPHandler(SocketServer.BaseRequestHandler):
         conn = Client(self.server.address)
         conn.send(["release_browser", [br, need_reboot, need_reboot_server]])
 
-    def __get_url(self, br, url):
+    def _get_url(self, br, url):
         br.get(url)
         return br.driver.page_source
 
@@ -176,6 +179,15 @@ class SeleniumDefaultTCPHandler(SocketServer.BaseRequestHandler):
             error(response['message'])
         response = zlib.compress(json.dumps(response), 9)
         self.request.sendall(response)
+
+    def is_no_connect(self, response):
+        no_connect = False
+        bad_responces = ['Unable to connect to host', 'It may have died', 'Unable to bind', 'object has no attribute', "Message: ''", 'Session not found', 'refused']
+        for r in bad_responces:
+            if r in response:
+                no_connect = True
+                break
+        return no_connect
 
     def handle(self):
         st = time.time()
@@ -194,8 +206,8 @@ class SeleniumDefaultTCPHandler(SocketServer.BaseRequestHandler):
                 socket.setdefaulttimeout(60)
                 info("%s: Send request: %s" % (br, url))
 
-                page_source = self.__get_url(br, url)
-                info("__get_url fiinished at %s sec" % (time.time()-st, ))
+                page_source = self._get_url(br, url)
+                info("_get_url fiinished at %s sec" % (time.time()-st, ))
 
                 effective_url = br.driver.current_url
                 info("effective url fiinished at %s sec (%s)" % (time.time()-st, effective_url))
@@ -204,17 +216,13 @@ class SeleniumDefaultTCPHandler(SocketServer.BaseRequestHandler):
                 info("__prepare_response finished at %s sec" % (time.time()-st, ))
             except Exception as e:
                 response = str(e)
+                
+                etype, evalue, etrace = sys.exc_info()
+                trace = str(traceback.format_exception(etype, evalue, etrace))
 
-                no_connect = False
-                bad_responces = ['Unable to connect to host', 'It may have died', 'Unable to bind', 'object has no attribute', "Message: ''", 'Session not found', 'refused']
-                for r in bad_responces:
-                    if r in response:
-                        no_connect = True
-                        break
-
-                if no_connect:
+                if self.is_no_connect(response):
                     response = "Selenium can't connect to browser."
-                    info("Send server %s to reboot" % br.server.server_name)
+                    warning("Send server %s to reboot, because %s, TRACE: %s" % (br.server.server_name, e, trace))
                     need_reboot_server = True
 
                 response = {"errnum":1, "message":response} 
@@ -225,6 +233,100 @@ class SeleniumDefaultTCPHandler(SocketServer.BaseRequestHandler):
                 self.__release_browser(br, need_reboot, need_reboot_server)
         else:
             self.__send_response({"errnum":2, "message":"All browsers is busy."} )
+
+
+class YandexTCPHandler(SeleniumDefaultTCPHandler):
+    
+    anticaptcha_key = None
+    anticaptcha_service = None
+
+    def _get_url(self, br, url):
+        br.get(url)
+        if Yandex.is_yandex_captcha(br.driver.current_url):
+            self.yandex_solve_captcha(br)
+        
+        return br.driver.page_source
+
+    def solve_captcha(self, br, page_source):
+
+        img_str = br.driver.get_screenshot_as_base64()
+        img_str =  base64.b64decode(img_str)
+        buff = StringIO.StringIO()
+        buff.write(img_str)
+        buff.seek(0)
+
+        i = Image.open(buff)
+        frame2 = i.crop(((165, 250, 375, 335)))
+        
+        buff2 = StringIO.StringIO()
+        img_data = frame2.save(buff2, 'gif')
+        img_data = buff2.getvalue()
+        buff2.close()
+
+        try:
+            code = solveImgUrl(self.anticaptcha_key, img_data = img_data, host = self.anticaptcha_service)
+        except AntigateNotAvailable as e:
+            raise AntigateNotAvailable("No connect with anticaptcha service")
+
+        return code
+
+
+        
+
+    def yandex_solve_captcha(self, br):
+        debug("CAPTCHA Found. Try solve.")
+
+        br.count_captcha += 1
+        cnt_attempts = 2
+
+        br.execute_js_with_jquery("""
+            $('body').prepend('<input id="infoinput" type="text" value="init info input">');
+        """)
+
+        page_source = br.driver.page_source
+
+        br.execute_js_with_jquery("""
+            $('#infoinput').attr('value', 'page_source ok');
+        """)
+
+        for i in range(cnt_attempts):
+            try:
+                code = toUnicode(self.solve_captcha(br, page_source))
+
+                br.execute_js_with_jquery("""
+                    $('#infoinput').attr('value', 'code %s');
+                """ % code);
+
+                debug('code is "%s"' % code)
+                br.driver.execute_script("document.getElementById('rep').value = '%s';" % code)
+                debug("%s: Keys sended" % br)
+
+                br.execute_js_with_jquery("""
+                    $('#infoinput').attr('value', 'Keys sended: %s');
+                """ % code);
+
+                br.execute_js_with_jquery("""
+                    $('input[class=b-captcha__submit]').click();
+                """);
+
+                # wait redirects
+                for i in range(10):
+                    if 'captcha' not in br.driver.current_url:
+                        break
+                    else:
+                        time.sleep(1)
+
+                if not Yandex.is_yandex_captcha(br.driver.current_url):
+                    break
+                else:
+                    raise CaptchaException("Yandex captcha not solved (sended code: %s)." % code)
+            except AntigateNotAvailable as e:
+                error("%s => %s" % (br, e))
+                raise CaptchaException(str(e))
+            except Exception as e:
+                error("%s => %s" % (br, e))
+                if i == (cnt_attempts-1):
+                    raise CaptchaException(str(e))
 
 
 class BrowserPool():
@@ -246,29 +348,41 @@ class BrowserPool():
         self.next_ip %= len(self._pool)
         return self._pool[self.next_ip]
 
+    def release_server(self, server):
+        info("\n=============================\nStart release_server %s\n==============================" % server)
+        for br in self._pool:
+            if br.host == server.host:
+                br.set_busy(server.reboot_exec_sec)
+                info("br.existed_session to remove for %s: %s, driver=%s" % (br, br.existed_session, br.driver))
+                br.quit()
+                #br.driver = None
+                #br.existed_session = None
+                info("br.existed_session removed2 for %s: %s, driver=%s" % (br, br.existed_session, br.driver))
+
     def get(self):
+
         now = int(time.time())
-        if self.last_reboot is not None and self.last_reboot<(now-Server.reboot_exec_sec):
-            self.last_reboot = None
-            self.last_reboot_server_num = None
+
+        #if self.last_reboot is not None and self.last_reboot<(now-Server.reboot_exec_sec):
+        #    self.last_reboot = None
+        #    self.last_reboot_server_num = None
 
         for i in range(len(self._pool)):
             br = self.next()
 
-            if br.need_reboot_server:
-                info("REQUESTED REBOOT OF SERVER %s with last_reboot_time=%s" % (br.server.server_name, br.server.last_reboot_time))
-                br.need_reboot_server = False
-                if br.server.last_reboot_time is None or (now - br.server.last_reboot_time) > 15*60:
-                    br.server.reboot_time = now - 1
-
-            if br.server.server_num == self.last_reboot_server_num:
+            if br.server.reboot:
+                warning("Server %s in rebooting" % br.server)
                 continue
+            
+            info("----- self.last_reboot: %s" % self.last_reboot)
+            info("----- br.existed_session %s: %s, driver %s" % (br, br.existed_session, br.driver))
 
             if br.server.need_reboot and self.last_reboot is None:
+                debug("====> NEED REBOOT SERVER %s" % br.server)
                 if not br.server.reboot:
                     br.server.reboot = True
                     reboot_thread = threading.Thread(target=reboot_server, args=(br.server, self))
-                    info("Start thread for reboot %s" % br.server)
+                    self.release_server(br.server)
                     reboot_thread.start()
                     self.last_reboot = now
                     self.last_reboot_server_num = br.server.server_num
@@ -276,6 +390,8 @@ class BrowserPool():
             else:
                 if not br.is_busy or (br.is_busy and br.is_busy_time<now):
                     return br
+                else:
+                    warning("%s is busy = %s, need wait %s sec" % (br, br.is_busy, (br.is_busy_time - now)))
         return None
 
 
@@ -293,17 +409,24 @@ class BrowserPool():
         info("Try to close %s browsers" % len(self._pool))
         for br in self._pool:
             br.quit()
-
+    
+    def set_reboot_server(self, server_num):
+        for br in self._pool:
+            if br.server.server_num == server_num:
+                info("REQUESTED REBOOT OF SERVER %s with last_reboot_time=%s" % (server_num, br.server.last_reboot_time))
+                br.server.reboot_time = int(time.time()) - 1
+                break
 
 # into the thread
 def reboot_server(server, pool):
+    info("===== Start thread for reboot %s" % server)
     setproctitle("%s Reboot %s" % (pool.name, server.server_name))
     server.perform_reboot(pool)
 
 
 class Server():
-    reboot_minutes = 15
-    reboot_exec_sec = 60
+    reboot_minutes = 3
+    reboot_exec_sec = 90
 
     def __init__(self, host, cnt_servers, client_id, api_key, server_num):
         self.host = host
@@ -368,9 +491,6 @@ class Server():
 
         self.reboot = True
         info("Start reboot...")
-        for br in pool._pool:
-            if br.host == self.host:
-                br.set_busy(self.reboot_exec_sec)
 
         try:
             server_id = self.get_server_id()
@@ -379,9 +499,16 @@ class Server():
         except Exception as e:
             error("Error when digitalocean get droplets list: %s" % str(e))
         finally:
-            info("Server successfully rebooted")
+            info("\n===========================================\nServer successfully rebooted\n===============================================")
             self.reboot = False
             self.last_reboot_time = int(time.time())
+            pool.last_reboot = None
+            pool.last_reboot_server_num = None
+            for br in pool._pool:
+                if br.host == self.host:
+                    info("br.existed_session %s is: %s, driver is %s" % (br, br.existed_session, br.driver))
+                    br.quit()
+                    info("br.existed_session after hardremove %s is: %s, driver is %s" % (br, br.existed_session, br.driver))
 
 
 class RemoteBrowser():
@@ -406,23 +533,8 @@ class RemoteBrowser():
         self.count_requests_for_dump = 0
         self.pool_id = None
         self.last_url_data = None
-        self.need_reboot_server = False
 
-    def download(self, filepath, url):
 
-        # костылечек
-        if 'yandex' in url and 'captchaimg' in url:
-            try:
-                self.driver.save_screenshot(filepath)
-            except Exception as e:
-                raise CaptchaException("save_screenshot error, "+str(e))
-            i = Image.open(filepath)
-            frame2 = i.crop(((140, 215, 345, 300)))
-            frame2.save(filepath)
-        else:
-            f = open(filepath)
-            f.write(self.driver.page_source)
-            f.close()
 
     def __str__(self):
         return '%s at %s' % (self.name, self.host)
@@ -435,8 +547,7 @@ class RemoteBrowser():
         self.is_busy = False
         self.is_busy_time = None
 
-    def reboot_server(self):
-        self.need_reboot_server = True
+
 
     def _setup_browser(self):
         pass
@@ -451,7 +562,9 @@ class RemoteBrowser():
         existd_session_id = self.existed_session.session_id if self.existed_session is not None else None
         
         info("existed_session_id is %s" % existd_session_id)
+
         self.driver = PersistentWebdriver(self.path, webdriver.DesiredCapabilities.FIREFOX, session_id=existd_session_id)
+        info("\n========================\nSET DRIVER FOR %s: %s\n=========================" % (self, self.driver))
         self.driver.implicitly_wait(500)
         self.driver.set_page_load_timeout(60)
         self.driver.set_script_timeout(60)
@@ -462,6 +575,7 @@ class RemoteBrowser():
         if existd_session_id is not None and self.driver.session_id!=existd_session_id:
             info("Was created new session! delete zombi session in database")
             db.delete(self.existed_session)
+            db.commit()
             self.existed_session = None
 
         if self.existed_session is None:
@@ -533,20 +647,26 @@ class RemoteBrowser():
             self.count_requests_for_dump = 0
 
     def quit(self):
+        info("quits from %s ..." % self)
         if self.driver is not None:
-            info("quits from %s ..." % self)
-
-            try:
-                self.driver.quit()
-            except Exception as e:
-                error("Error when selenium quit: %s" % e)
+        
+            # На зависших браузерах не удается выполнить.
+            # Если возвращать, то с таймаутом,а то он ждет вечно
+            #try:
+            #    self.driver.quit()
+            #except Exception as e:
+            #    error("Error when selenium quit: %s" % e)
+            
             self.driver = None
+            self.existed_session = None
 
             info('delete from db: %s' % self.id)
 
             db = get_sql_session(self.db_config)
             session = db.query(SeleniumSession).get(self.id)
-            db.delete(session)
+            if session is not None:
+                db.delete(session)
+                db.commit()
 
 
 def serve_pool(pool, host, port):
@@ -578,7 +698,7 @@ def serve_pool(pool, host, port):
                 need_reboot = args[1]
                 need_reboot_server = args[2]
                 if need_reboot_server:
-                    br.reboot_server()
+                    pool.set_reboot_server(br.server.server_num)
                     br.unset_busy()
                 elif need_reboot:
                     br.set_busy(3600)
@@ -616,7 +736,6 @@ def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = Non
 
     proc_name = 'SocketServer'
     pool_name = 'BrowserPoolManager'
-    debug("proc_name is %s" % proc_name)
 
     def get_cnt_prc():
         p1 = processecControl(proc_name, 1, no_exit = True)
@@ -664,13 +783,15 @@ def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = Non
     processecControl(proc_name, 1)
     processecControl(pool_name, 1)
     setproctitle(proc_name)
-    debug("Start new socket server.")
+    
     
     HOST = SELENIUM_SERVER['host']
     PORT = SELENIUM_SERVER['port']
     PORT_2 = PORT + 1 if PORT_2 is None else PORT_2
     SocketServer.TCPServer.allow_reuse_address = True
-    info("Try serve %s:%s..." % (HOST, PORT))
+    info("Start serve %s:%s" % (HOST, PORT))
+    info("tcp_handler: %s" % tcp_handler)
+    
     server = ThreadedTCPServer((HOST, PORT), tcp_handler)
 
 
@@ -693,6 +814,7 @@ def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = Non
             sessions_by_servers[session.server].append(session)
         
         server_num = 0
+        avg_nodes_cnt = []
         for ip, port, cnt in SELENIUM_SERVERS:
             server_num += 1
             sessions = sessions_by_servers[ip] if ip in sessions_by_servers else []
@@ -705,17 +827,20 @@ def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = Non
 
             info('======== %s ========' % srv.server_name)
             max_socket_children += cnt
+            avg_nodes_cnt.append(cnt)
             for i in range(cnt):
                 num += 1
                 name = "Browser %s" % num
-                info('%s at %s' % (name, ip))
+                
                 existed_session = sessions.pop() if len(sessions)>0 else None
+                info('%s at %s, existed session %s' % (name, ip, existed_session.session_id if existed_session is not None else None))
                 br = remote_browser(name, srv, port, db_config = DATABASE, session=existed_session)
                 pool.add(br)
             if len(sessions)>0:
                 warning("Excess %s sessions in %s. Remove it from DataBase" % (len(sessions), ip))
                 for session in sessions:
                     db.delete(session)
+                    db.commit()
                     warning("Session %s removed" % session.session_id)
         db.close()
 
@@ -729,9 +854,14 @@ def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = Non
         p.start()
 
         info("All selenium sessions created: %s" % pool.size())
+        
+        avg_nodes_cnt = sum(avg_nodes_cnt)/server_num
+        info("avg_nodes_cnt: %s" % avg_nodes_cnt)
+
+        max_socket_children -= avg_nodes_cnt
+        max_socket_children -= max_socket_children*0.1
         info("max_socket_children is %s" % max_socket_children)
 
-        max_socket_children = 190
         server.max_children = max_socket_children
         server.serve_forever((HOST, PORT_2))
     except KeyboardInterrupt:

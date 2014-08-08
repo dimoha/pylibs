@@ -13,6 +13,10 @@ class YandexMarketException(YandexException):
 class YandexMarketWebException(YandexMarketException):
     pass
 
+class YandexMarket404Exception(YandexMarketWebException):
+    pass
+
+
 class YandexMarketApiException(YandexMarketException):
     pass
 
@@ -207,6 +211,11 @@ class YandexMarketWeb(Yandex):
         debug(page_url)
 
         html = self.request(page_url)
+
+        if at_xpath(html, '//title/text') == '404':
+            raise YandexMarket404Exception("Model %s not found" % model_id)
+
+
         self.check_region()
         
         breadcrumbs = []

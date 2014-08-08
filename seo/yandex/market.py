@@ -181,9 +181,13 @@ class YandexMarketWeb(Yandex):
                     if '%7c' in model_id:
                         model_id = model_id.split("%7c")[0]
                     model_id = int(model_id)
+                    info("model_id: %s" % model_id)
                     product_link = at_xpath(position, './/a[@id="item-href-%s"]' % model_id)
+                    info("product_link: %s" % product_link)
                     product_name = toUnicode(element_text(product_link))
+                    info("product_name: %s" % product_name)
                     product_href = '%s%s' % (self.host, product_link.attrib['href'])
+                    info("product_href: %s" % product_href)
                     #debug("%s | %s | %s" % (model_id, product_name, product_href)) 
 
                     product = {'model_id':model_id, 'product_name':product_name, 'product_href':product_href}

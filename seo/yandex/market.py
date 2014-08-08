@@ -185,7 +185,7 @@ class YandexMarketWeb(Yandex):
                     #info("model_id: %s" % model_id)
                     #product_link = at_xpath(position, './/a[@id="item-href-%s"]' % model_id)
                     
-                    product_link = at_xpath(position, './/a[containce(@id, "item-href-")]')
+                    product_link = at_xpath(position, './/a[contains(@id, "item-href-")]')
                     info("product_link: %s" % product_link)
                     model_id = int(product_link.attrib['id'].replace("item-href-", ""))
                     info("model_id: %s" % model_id)

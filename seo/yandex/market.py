@@ -183,15 +183,16 @@ class YandexMarketWeb(Yandex):
                     model_id = int(model_id)
                     info("model_id: %s" % model_id)
                     product_link = at_xpath(position, './/a[@id="item-href-%s"]' % model_id)
-                    info("product_link: %s" % product_link)
-                    product_name = toUnicode(element_text(product_link))
-                    info("product_name: %s" % product_name)
-                    product_href = '%s%s' % (self.host, product_link.attrib['href'])
-                    info("product_href: %s" % product_href)
-                    #debug("%s | %s | %s" % (model_id, product_name, product_href)) 
+                    if product_link is not None:
+                        info("product_link: %s" % product_link)
+                        product_name = toUnicode(element_text(product_link))
+                        info("product_name: %s" % product_name)
+                        product_href = '%s%s' % (self.host, product_link.attrib['href'])
+                        info("product_href: %s" % product_href)
+                        #debug("%s | %s | %s" % (model_id, product_name, product_href)) 
 
-                    product = {'model_id':model_id, 'product_name':product_name, 'product_href':product_href}
-                    products.append(product)
+                        product = {'model_id':model_id, 'product_name':product_name, 'product_href':product_href}
+                        products.append(product)
 
             next_url = at_xpath(html, '//a[@class="b-pager__next"]')
             if next_url is None:

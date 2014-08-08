@@ -177,7 +177,10 @@ class YandexMarketWeb(Yandex):
             positions = css(html, 'div.b-offers_type_guru')
             for position in positions:
                 if 'id' in position.attrib:
-                    model_id = int(position.attrib['id'])
+                    model_id = position.attrib['id']
+                    if '%7c' in model_id:
+                        model_id = model_id.split("%7c")[0]
+                    model_id = int(model_id)
                     product_link = at_xpath(position, './/a[@id="item-href-%s"]' % model_id)
                     product_name = toUnicode(element_text(product_link))
                     product_href = '%s%s' % (self.host, product_link.attrib['href'])

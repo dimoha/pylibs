@@ -212,7 +212,9 @@ class YandexMarketWeb(Yandex):
 
         html = self.request(page_url)
 
-        if at_xpath(html, '//title/text') == '404':
+        title = element_text(at_xpath(html, '//title'))
+        info("title: %s" % title)
+        if title == '404':
             raise YandexMarket404Exception("Model %s not found" % model_id)
 
 

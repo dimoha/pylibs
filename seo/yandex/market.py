@@ -254,6 +254,7 @@ class YandexMarketWeb(Yandex):
         offers_info_list = css(html, 'div.b-offers__offers')
         for offer in offers_info_list:
             price = element_text(at_xpath(offer, './/span[@class="b-old-prices__num"]'))
+            print "delivery_cost: %s" % price
             price = float(re.sub("[^\d\.]+(?is)", "", price.replace(",", ".")))
             shop_name = toUnicode(element_text(at_css(offer, 'div.b-offers__feats a.shop-link')))
             product_name = toUnicode(element_text(at_css(offer, 'a.b-offers__name')))
@@ -262,6 +263,7 @@ class YandexMarketWeb(Yandex):
             m = re.search(u'Доставка\s+(.+)\s+руб(?isu)', delivery_info)
             if m:
                 delivery_cost = m.group(1).strip().replace(",", ".")
+                print "delivery_cost: %s" % delivery_cost
                 delivery_cost = float(re.sub("[^\d\.]+(?is)", "", delivery_cost))
             
             offers.append({'price':price, 'shop_name':shop_name, 'product_name':product_name, "delivery_cost":delivery_cost, "delivery_info":delivery_info})

@@ -259,7 +259,7 @@ class YandexMarketWeb(Yandex):
             product_name = toUnicode(element_text(at_css(offer, 'a.b-offers__name')))
             delivery_info = toUnicode(element_text(at_css(offer, 'div.b-offers__delivery span.b-offers__delivery-text')))
             delivery_cost = None
-            m = re.search(u'Доставка\s+(.+)\s+руб(?isu)', delivery_info)
+            m = re.search(u'Доставка\s+(\d+)\s+руб(?isu)', delivery_info)
             if m:
                 delivery_cost = m.group(1).strip().replace(",", ".")
                 try:

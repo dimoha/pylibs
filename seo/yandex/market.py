@@ -265,7 +265,7 @@ class YandexMarketWeb(Yandex):
                 try:
                     delivery_cost = float(re.sub("[^\d\.]+(?is)", "", delivery_cost))
                 except Exception as e:
-                    warning("CAnt get delivery_cost from string: %s" % delivery_cost)
+                    warning("Can't get delivery_cost from string: %s" % delivery_cost)
                     delivery_cost = None
 
             

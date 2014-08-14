@@ -248,6 +248,9 @@ class YandexMarketWeb(Yandex):
         for a in breadcrumbs_a:
             breadcrumbs.append({'url':a.attrib['href'].decode('utf-8'), 'title':element_text(a).decode('utf-8')})
         
+        if len(breadcrumbs) == 0:
+            raise YandexMarketWebException("Not found breadcrumbs in %s" % page_url)
+
         info("breadcrumbs: %s" % repr(breadcrumbs).decode("unicode-escape"))
 
         offers = []

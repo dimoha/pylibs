@@ -43,7 +43,19 @@ class YandexMarketApi(Yandex):
             params = {}
         params.update(default_params)
 
-        _tmp = self.get(uri, params)
+        
+        for j in range(try_cnt):
+            try:
+                _tmp = self.get(uri, params)
+                break
+            except BrowserException as e:
+                if j == (try_cnt-1):
+                    raise
+                else:
+                    warning("Get %s error %s: %s" % (posesname, j, e))
+                    continue
+
+
         count_pages = int(math.ceil(float(_tmp['pager']['total']) / float(pp)))
         info("count pages: %s" % count_pages)
         params['pageSize'] = pp

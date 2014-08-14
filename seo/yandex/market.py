@@ -257,7 +257,7 @@ class YandexMarketWeb(Yandex):
             price = float(re.sub("[^\d\.]+(?is)", "", price.replace(",", ".")))
             shop_name = toUnicode(element_text(at_css(offer, 'div.b-offers__feats a.shop-link')))
             product_name = toUnicode(element_text(at_css(offer, 'a.b-offers__name')))
-            delivery_info = toUnicode(element_text(at_css(offer, 'div.b-offers__delivery')))
+            delivery_info = toUnicode(element_text(at_css(offer, 'div.b-offers__delivery span.b-offers__delivery-text')))
             delivery_cost = None
             m = re.search(u'Доставка\s+(.+)\s+руб(?isu)', delivery_info)
             if m:

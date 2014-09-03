@@ -1,4 +1,4 @@
 pylibs
 ======
 
-Python libs 
+Python libs for SEO

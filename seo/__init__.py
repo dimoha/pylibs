@@ -2,4 +2,4 @@
 from pylibs import PyLibsException
 
 class SeoException(PyLibsException):
-	pass
+    pass

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os, time, sys
+from logging import info
 
 def kill_process(mask):
     c = 0
@@ -11,12 +12,11 @@ def kill_process(mask):
             if thisStrPid!=tPid:
                 if mask in onestr:
                     c += 1
-                    #print 'kill -9 %s' % thisStrPid
-                    #print onestr
+
                     os.popen("kill -9 "+str(thisStrPid))
         except Exception as e:
             pass
-    print 'killed %s processes' % c
+    info('killed %s processes' % c)
 
 def processecControl(name, numcopies, args = None, no_exit = False):
 
@@ -33,7 +33,6 @@ def processecControl(name, numcopies, args = None, no_exit = False):
         for v in alist:
             v = v.strip()
             if v==name:
-                print v
                 canCollect = True
                 continue
             if canCollect==True:
@@ -69,7 +68,7 @@ def processecControl(name, numcopies, args = None, no_exit = False):
 
     cntProcesses = int(cntProcesses)
     if cntProcesses>=int(numcopies):
-        print "Process "+str(name)+" already exist."
+        info("Process "+str(name)+" already exist.")
         if not no_exit:
             sys.exit()
 

@@ -192,7 +192,7 @@ class SeleniumDefaultTCPHandler(SocketServer.BaseRequestHandler):
     def handle(self):
         st = time.time()
         url = self.request.recv(4096).strip()
-
+        debug("Catched request from client: %s" % url)
 
 
         br = self.__get_browser()
@@ -228,6 +228,8 @@ class SeleniumDefaultTCPHandler(SocketServer.BaseRequestHandler):
                     warning(trace)
 
                 response = {"errnum":1, "message":response} 
+            except KeyboardInterrupt:
+                response = {"errnum":2, "message":"KeyboardInterrupt"} 
             finally:
                 self.__send_response(response)
                 info("data sended in %s sec" % (time.time()-st, ))
@@ -450,7 +452,7 @@ class Server():
         return '%s' % self.host
 
     def set_reboot_time(self):
-        if self.server_num is not None:
+        if self.server_num is not None and self.cnt_servers > 1:
             if self.reboot_time is None:
                 self.reboot_time = int(time.time())+(self.reboot_minutes*60*self.server_num)
             else:
@@ -679,6 +681,7 @@ def serve_pool(pool, host, port):
     info("Browser pool started")
     while True:
         try:
+            debug("serve_pool wait connection")
             conn = listener.accept()
             data = conn.recv()
             comand = data[0]
@@ -711,7 +714,8 @@ def serve_pool(pool, host, port):
             debug("serve_pool conn close")
         except Exception as e:
             info('%s exception: %s' % (pool.name, e))
-
+        except KeyboardInterrupt:
+            break
     info("Browser pool stopped.")
     listener.close()
 
@@ -863,16 +867,12 @@ def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = Non
 
         max_socket_children -= avg_nodes_cnt
         max_socket_children -= max_socket_children*0.1
+        max_socket_children = max(max_socket_children, avg_nodes_cnt)
         info("max_socket_children is %s" % max_socket_children)
 
         server.max_children = max_socket_children
         server.serve_forever((HOST, PORT_2))
     except KeyboardInterrupt:
-
-        conn = Client(server.address)
-        conn.send(["stop"])
-        res = conn.recv()
-        info('stop status is %s' % res)
 
         info("Start stop SocketServer...")
         server.shutdown()

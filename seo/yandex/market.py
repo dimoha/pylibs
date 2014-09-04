@@ -167,6 +167,60 @@ class YandexMarketWeb(Yandex):
         info("popular_link: %s" % popular_link) 
         return self.get_products_list(popular_link)
 
+
+    def get_shop_offers(self, shop_id, limit = None):
+        url = '%s/search.xml?fesh=%s' % (self.host, shop_id)
+        try_cnt = 6
+        products = []
+        while True:
+            
+            for i in range(try_cnt):
+                try:
+                    html = self.request(url)
+                    break
+                except Exception as e:
+                    if i == (try_cnt-1):
+                        raise
+                    else:
+                        warning("get_shop_offers error %s: %s" % (i, e))
+                        continue
+            
+            self.check_region()
+
+            
+            positions = css(html, 'div.b-serp__item')
+            if len(positions) > 0:
+                m = re.search(u'mvc\.map\("search-results",([^;]+)\);(?isu)', self.transport.unicode())
+                search_json = json.loads(m.group(1).strip())
+                glen = len(search_json[0])
+                search_json = search_json[1]
+                info("Found %s positions on page" % len(positions))
+                for n,position in enumerate(positions):
+                    product_link = at_css(position, 'a.b-offers__name')
+                    product_name = toUnicode(element_text(product_link))
+                    model_id = int(search_json[n*(1+glen) + glen])
+                    price = element_text(at_xpath(position, './/span[@class="b-old-prices__num"]'))
+                    price = float(re.sub("[^\d\.]+(?is)", "", price.replace(",", ".")))
+                    debug("%s | %s | %s" % (product_name, model_id, price))
+                    product = {'product_name':product_name, "model_id":model_id, "price":price}
+                    products.append(product)
+            else:
+                break
+
+            next_url = at_xpath(html, '//a[@class="b-pager__next"]')
+            if next_url is None:
+                break
+            else:
+                url = '%s%s' % (self.host, next_url.attrib['href'])
+                debug("next url: %s" % url)
+
+            if limit is not None and len(products) >= limit:
+                products = products[0:limit]
+                break
+
+        debug("parsed: %s positions" % len(products))
+        return products
+
     def get_products_list(self, url, limit=200):
         
         try_cnt = 6
@@ -189,22 +243,15 @@ class YandexMarketWeb(Yandex):
             positions = css(html, 'div.b-offers_type_guru')
             for position in positions:
                 if 'id' in position.attrib:
-                    
-                    #model_id = position.attrib['id']
-                    #if '%7c' in model_id:
-                    #    model_id = model_id.split("%7c")[0]
-                    #model_id = int(model_id)
-                    #info("model_id: %s" % model_id)
-                    #product_link = at_xpath(position, './/a[@id="item-href-%s"]' % model_id)
-                    
+
                     product_link = at_xpath(position, './/a[contains(@id, "item-href-")]')
+
                     model_id = int(product_link.attrib['id'].replace("item-href-", ""))
                     debug("model_id: %s" % model_id)
                     product_name = toUnicode(element_text(product_link))
                     debug("product_name: %s" % product_name)
                     product_href = '%s%s' % (self.host, product_link.attrib['href'])
                     debug("product_href: %s" % product_href)
-                    #debug("%s | %s | %s" % (model_id, product_name, product_href)) 
 
                     product = {'model_id':model_id, 'product_name':product_name, 'product_href':product_href}
                     products.append(product)
@@ -243,6 +290,8 @@ class YandexMarketWeb(Yandex):
 
         self.check_region()
         
+        model_name = element_text(at_css(html, 'h1.b-page-title__title'))
+
         breadcrumbs = []
         breadcrumbs_a = xpath(html, '//a[@class="b-breadcrumbs__link"]')
         for a in breadcrumbs_a:
@@ -256,6 +305,15 @@ class YandexMarketWeb(Yandex):
         offers = []
         offers_info_list = css(html, 'div.b-offers__offers')
         for offer in offers_info_list:
+            
+            rating = at_css(offer, 'span.b-aura-rating')
+            rating = int(rating.attrib['data-rate']) if rating is not None else 0
+
+            rating_link = at_css(offer, 'a.b-rating__link')
+            if rating_link is None:
+                rating_link = at_css(offer, 'a.b-offers__price__grade')
+            shop_id = int(rating_link.attrib['href'].split("/")[2])
+
             price = element_text(at_xpath(offer, './/span[@class="b-old-prices__num"]'))
             price = float(re.sub("[^\d\.]+(?is)", "", price.replace(",", ".")))
             shop_name = toUnicode(element_text(at_css(offer, 'div.b-offers__feats a.shop-link')))
@@ -271,11 +329,11 @@ class YandexMarketWeb(Yandex):
                     warning("Can't get delivery_cost from string: %s" % delivery_cost)
                     delivery_cost = None
 
-            
-            offers.append({'price':price, 'shop_name':shop_name, 'product_name':product_name, "delivery_cost":delivery_cost, "delivery_info":delivery_info})
+            offer_dict = {'price':price, 'shop_id':shop_id, 'rating':rating, 'shop_name':shop_name, 'product_name':product_name, "delivery_cost":delivery_cost, "delivery_info":delivery_info}
+            offers.append(offer_dict)
 
         info("Found %s offers" % len(offers))
-        return {'breadcrumbs':breadcrumbs, "offers":offers}
+        return {'breadcrumbs':breadcrumbs, "model_name":model_name, "offers":offers}
 
 
 

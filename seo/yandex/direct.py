@@ -19,19 +19,18 @@ class YandexDirect(Yandex):
 
     def is_captcha(self, *args, **kwargs):
         captcha_found = super(YandexDirect, self).is_captcha(*args, **kwargs)
-        
         if at_xpath(self.html, '//input[@name="captcha_id"]') is not None:
             captcha_found = True
 
         return captcha_found
 
-    def __get_captcha_form(self):
+    def _get_captcha_form(self):
         return at_xpath(self.html, '//form[contains(@action,"direct.yandex.ru")]')
 
-    def __get_captcha_img(self, form):
+    def _get_captcha_img(self, form):
         return at_xpath(self.html, '//img[contains(@src,"captcha.yandex")]')
 
-    def __fill_captcha_form(self, form, captcha_value):
+    def _fill_captcha_form(self, form, captcha_value):
         form.fields['captcha_code'] = captcha_value
         return form
 
@@ -109,8 +108,8 @@ class YandexDirect(Yandex):
                         info(phraseTpl+' - undefined keyword :(')
             except AntiCaptchaException:
                 time.sleep(30)
-            except Exception as e:
-                debug("try found stops, because: %s" % e)
+            except YandexDirectException as e:
+                info("try found stops, because: %s" % e)
                 stops = self.get_stops(toUnicode(str(e)))    
 
                 if len(stops)>0:
@@ -141,7 +140,9 @@ class YandexDirect(Yandex):
         if freq_form is not None:
             freq_form.fields['geo'] = str(region_id)
             freq_form.fields['new_phrases'] = request
-            self.transport.postForm(freq_form, {'timestamp':time.time()})
+            self.request(post_form = freq_form, post = {'timestamp':time.time()})
+            
+
 
         m = re.findall('phrase:\s+\'([^\']+)\'.+?,\s+shows:\s+([\d]+)\s(?isu)', self.transport.body())
         if m:
@@ -159,6 +160,7 @@ class YandexDirect(Yandex):
                 htm = m.group(1).strip()
                 raise YandexDirectException('WordStat return: %s' % htm)
             else:
+                
                 raise YandexDirectException('No Results in HTML')
         
         return freqs

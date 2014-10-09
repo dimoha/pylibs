@@ -21,9 +21,16 @@ class Yandex(object):
         self.transport.yandex_account = account
         self.transport.page_handler = yandex_authorization
 
-    def request(self, url):
+    def request(self, url = None, post_form = None, post = None):
         debug(url)
-        self.transport.get(url)
+        
+        if post_form is not None:
+            self.transport.postForm(post_form, post)
+        elif post is not None:
+            self.transport.post(url)
+        else:
+            self.transport.get(url)
+
         self.html = parse_html(self.transport.unicode())
         if self.is_captcha():
             warning("Need antigate request, because captcha cathed.")
@@ -43,13 +50,13 @@ class Yandex(object):
         else:
             return False
 
-    def __get_captcha_form(self):
+    def _get_captcha_form(self):
         form = at_css(self.html, "div.b-captcha form")
         if form is None:
             form = at_xpath(self.html, '//form[contains(@action, "checkcaptcha")]')   
         return form
 
-    def __get_captcha_img(self, form):
+    def _get_captcha_img(self, form):
         img = None
         if form is not None:
             img = at_css(form, "img.b-captcha__image")
@@ -57,15 +64,14 @@ class Yandex(object):
                 img = at_css(form, "img.b-captcha__image_exp")
         return img
 
-    def __fill_captcha_form(self, form, captcha_value):
+    def _fill_captcha_form(self, form, captcha_value):
         form.fields['rep'] = captcha_value
         return form
 
     def solve_captcha(self):
 
-        form = self.__get_captcha_form()
-        img = self.__get_captcha_img(form)
-    
+        form = self._get_captcha_form()
+        img = self._get_captcha_img(form)
 
         effective_url_init = self.transport.effective_url
         if form is None or img is None:
@@ -82,7 +88,7 @@ class Yandex(object):
         
         debug('captcha_value: %s' % captcha_value)
 
-        form = self.__fill_captcha_form(form, captcha_value)
+        form = self._fill_captcha_form(form, captcha_value)
 
         self.transport.effective_url = effective_url_init
         self.transport.postForm(form)

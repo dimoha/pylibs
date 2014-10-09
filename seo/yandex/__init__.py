@@ -116,8 +116,6 @@ def yandex_authorization(br):
         auth_form.fields['passwd'] = unicode(password)
         auth_form.fields['twoweeks'] = True
         
-        #if br.page_handler.__name__=='yandex_authorization':
-        #    br.page_handler = None
         
         debug("START POST")
         br.postForm(auth_form,{'timestamp':time.time()})
@@ -135,6 +133,8 @@ def yandex_authorization(br):
         if 'ваш браузер не поддерживает автоматическое перенаправление' in br.body():
             info('Auto refrsh page detected, perform_url: %s' % br.perform_url)
             br.get(br.perform_url)
+            if br.page_handler.__name__=='yandex_authorization':
+                br.page_handler = None
         else:
             debug("Auth success!")
 

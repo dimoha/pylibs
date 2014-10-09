@@ -73,12 +73,21 @@ def url_from_pynicode(url):
         h = unicode(h, 'utf-8')
     
     try:
-        hp = str(h.decode("idna").encode('utf-8')).lower() # convert from punicode
+        hp = h.decode("idna") # convert from punicode
     except Exception as e:
         raise PynicodeConvertException('%s in url %s, domain %s' % (str(e), url, h))
             
+    #hp = hp.encode('utf-8').lower()
 
-    return url.replace(h, hp, 1)
+    try:
+        url = url.replace(h, hp, 1)
+    except:
+        print [url]
+        print [h]
+        print [hp]
+        raise
+
+    return url
 
 def is_www(s):
     if s.lower().startswith('www.'):

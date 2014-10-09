@@ -310,6 +310,7 @@ class Browser():
         
         url = url_to_pynicode(url) 
 
+
         curl.setopt(pycurl.URL, str(url))
         curl.setopt(curl.WRITEFUNCTION, self._body.write)
         try:
@@ -323,6 +324,7 @@ class Browser():
         
         if self.page_handler is not None:
             self.page_handler(self)
+
         return self._body.getvalue()
         
     def post(self, url, fields = None, postdata = None, content_type = None, cookies = None, files = None):
@@ -373,7 +375,7 @@ class Browser():
         return self._action_url(url)
     
     def _action_url(self,action):
-        return urljoin(self.effective_url, action)
+        return urljoin(self.effective_url, action if action is not None else '')
     
     def postForm(self, form, addparams = {}):
         utf8data = {}

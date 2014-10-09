@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from seo import SeoException
+from pylibs.seo import SeoException
 from pylibs.network.parser import *
 from logging import info, warning, debug
 from pylibs.network.browser import Browser
@@ -8,15 +8,21 @@ from pylibs.network.anticaptcha import solveImgUrl
 class YandexException(SeoException):
     pass
 
+class YandexAuthorizationException(YandexException):
+        pass
+
 class Yandex(object):
 
 
-    def __init__(self, transport=None, cookie_file = None, anticaptcha_key=None, anticaptcha_host = None):
+    def __init__(self, transport=None, cookie_file = None, anticaptcha_key=None, anticaptcha_host = None, account = None):
         self.transport =  Browser(cookie_file=cookie_file) if transport is None else transport
         self.anticaptcha_key = anticaptcha_key
         self.anticaptcha_host = anticaptcha_host
+        self.transport.yandex_account = account
+        self.transport.page_handler = yandex_authorization
 
     def request(self, url):
+        debug(url)
         self.transport.get(url)
         self.html = parse_html(self.transport.unicode())
         if self.is_captcha():
@@ -82,3 +88,53 @@ class Yandex(object):
         self.transport.postForm(form)
 
         return not self.is_captcha()
+
+
+
+def yandex_authorization(br):
+    
+    user = None
+    password = None
+
+
+    user = br.yandex_account['user']
+    password = br.yandex_account['password']
+    
+    login_input = at_xpath(br.html(),'//input[@id="login"]')
+    auth_form = at_xpath(br.html(), '//form[contains(@action,"passport")]')
+
+    if auth_form is None and login_input is not None:
+        _auth_form = at_xpath(br.html(),'//form')
+        if 'login' in _auth_form.fields:
+            info("catched strange auth form")
+            auth_form = _auth_form
+
+
+    if auth_form is not None:
+        info('Start auth in Yandex: %s => %s' % (user, password))
+        auth_form.fields['login'] = unicode(user)
+        auth_form.fields['passwd'] = unicode(password)
+        auth_form.fields['twoweeks'] = True
+        
+        #if br.page_handler.__name__=='yandex_authorization':
+        #    br.page_handler = None
+        
+        debug("START POST")
+        br.postForm(auth_form,{'timestamp':time.time()})
+        debug("END POST")
+
+        auth_form_again = at_xpath(br.html(),'//form[contains(@action,"passport")]')
+        login_form_again = at_xpath(br.html(),'//input[@id="login"]')
+
+        if auth_form_again is not None:
+            raise YandexAuthorizationException('Authorization Fail. Auth form Twice.')
+
+        if at_xpath(br.html(),'//input[@id="login"]') is not None:
+            raise YandexAuthorizationException('Authorization Fail. input login Twice.')
+
+        if 'ваш браузер не поддерживает автоматическое перенаправление' in br.body():
+            info('Auto refrsh page detected, perform_url: %s' % br.perform_url)
+            br.get(br.perform_url)
+        else:
+            debug("Auth success!")
+

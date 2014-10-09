@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from seo.yandex import YandexException, Yandex
+from pylibs.seo.yandex import YandexException, Yandex
 from pylibs.network.parser import *
 from pylibs.network.urls import *
 from pylibs.network.browser import BrowserException

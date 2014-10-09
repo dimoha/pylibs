@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from seo import SeoException
+from pylibs.seo import SeoException
 from pylibs.network.browser import Browser
 from pylibs.network.parser import *
 from pylibs.network.urls import *

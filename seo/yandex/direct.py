@@ -151,7 +151,7 @@ class YandexDirect(Yandex):
                 freq = int(v[1])
                 if word!='':
                     freqs[word] = freq
-                    info(word.encode('utf-8')+' => '+str(freq))
+                    debug(word.encode('utf-8')+' => '+str(freq))
 
         if len(freqs)==0:
             htm = self.transport.unicode()

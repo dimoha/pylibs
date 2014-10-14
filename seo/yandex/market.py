@@ -157,7 +157,7 @@ class YandexMarketWeb(Yandex):
             if self.region.lower() != current_region.lower():
                 raise YandexMarketWebException("Incorrect region: %s (need %s)" % (current_region, self.region))
 
-    def get_popular_list(self, hid):
+    def get_popular_list(self, hid, limit = 200):
         url = '%s/catalog.xml?hid=%s&track=pieces' % (self.host, hid)
         html = self.request(url)
         self.check_region()
@@ -165,7 +165,7 @@ class YandexMarketWeb(Yandex):
         popular_link = at_xpath(self.html, u'//a[@class="top-3-models__title-link" and contains(text(), "Популярные")]').attrib['href']
         popular_link = '%s%s'  % (self.host, popular_link)
         info("popular_link: %s" % popular_link) 
-        return self.get_products_list(popular_link)
+        return self.get_products_list(popular_link, limit)
 
 
     def get_shop_offers(self, shop_id, limit = None):

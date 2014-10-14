@@ -272,6 +272,33 @@ class YandexMarketWeb(Yandex):
         debug("parsed: %s positions" % len(products))
         return products
 
+    def parse_model_reviews_page(self, model_id, hid = None):
+
+        page_url = '%s/product/%s/reviews' % (self.host, model_id)
+        if hid is not None:
+            page_url = page_url + "?hid=" + str(hid)
+
+        debug(page_url)
+
+        html = self.request(page_url)
+
+        breadcrumbs = self.__parse_breadcrumbs(html)
+
+        return {"breadcrumbs":breadcrumbs}
+
+    def __parse_breadcrumbs(self, html):
+        breadcrumbs = []
+        breadcrumbs_a = xpath(html, '//a[@class="b-breadcrumbs__link"]')
+        for a in breadcrumbs_a:
+            breadcrumbs.append({'url':a.attrib['href'].decode('utf-8'), 'title':element_text(a).decode('utf-8')})
+
+        if len(breadcrumbs) == 0:
+            raise YandexMarketWebException("Not found breadcrumbs in %s" % page_url)
+
+        info("breadcrumbs: %s" % repr(breadcrumbs).decode("unicode-escape"))
+
+        return breadcrumbs
+
     def parse_model_offers_page(self, model_id, hid = None):
         params = {'modelid':model_id}
         if hid is not None:
@@ -292,15 +319,7 @@ class YandexMarketWeb(Yandex):
         
         model_name = element_text(at_css(html, 'h1.b-page-title__title'))
 
-        breadcrumbs = []
-        breadcrumbs_a = xpath(html, '//a[@class="b-breadcrumbs__link"]')
-        for a in breadcrumbs_a:
-            breadcrumbs.append({'url':a.attrib['href'].decode('utf-8'), 'title':element_text(a).decode('utf-8')})
-        
-        if len(breadcrumbs) == 0:
-            raise YandexMarketWebException("Not found breadcrumbs in %s" % page_url)
-
-        info("breadcrumbs: %s" % repr(breadcrumbs).decode("unicode-escape"))
+        breadcrumbs = self.__parse_breadcrumbs(html)
 
         offers = []
         offers_info_list = css(html, 'div.b-offers__offers')

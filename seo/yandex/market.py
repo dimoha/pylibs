@@ -272,7 +272,7 @@ class YandexMarketWeb(Yandex):
         debug("parsed: %s positions" % len(products))
         return products
 
-    def parse_model_reviews_page(self, model_id, hid = None):
+    def parse_model_reviews_page(self, model_id, hid = None, limit = None):
 
         page_url = '%s/product/%s/reviews' % (self.host, model_id)
         if hid is not None:
@@ -280,11 +280,46 @@ class YandexMarketWeb(Yandex):
 
         debug(page_url)
 
-        html = self.request(page_url)
+        rewiews = []
+        while True:
 
+            try_cnt = 6
+            for i in range(try_cnt):
+                try:
+                    html = self.request(page_url)
+                    break
+                except Exception as e:
+                    if i == (try_cnt-1):
+                        raise
+                    else:
+                        warning("parse_model_reviews_page error %s: %s" % (i, e))
+                        continue
+
+            self.check_region()
+
+            page_rewiews = xpath(self.html, '//div[contains(@id, "review-")]')
+            for rewiew in page_rewiews:
+                userid = at_css(rewiew, 'a.b-aura-username')
+                userid = userid.attrib['href'].split('/')[2] if userid is not None else None
+                rating = self.__parse_rating(rewiew)
+                rewiews.append({'userid':userid, 'rating':rating})
+
+            next_url = at_xpath(html, '//a[@class="b-pager__next"]')
+            if next_url is None:
+                break
+            else:
+                page_url = '%s%s' % (self.host, next_url.attrib['href'])
+                debug("next url: %s" % page_url)
+
+            if limit is not None and len(rewiews) >= limit:
+                rewiews = rewiews[0:limit]
+                break
+
+        model_name = self.__parse_model_name(html)
         breadcrumbs = self.__parse_breadcrumbs(html)
+        info("Parsed %s reviews from model_id=%s" % (len(rewiews), model_id))
 
-        return {"breadcrumbs":breadcrumbs}
+        return {"breadcrumbs":breadcrumbs, "model_name":model_name, "rewiews":rewiews}
 
     def __parse_breadcrumbs(self, html):
         breadcrumbs = []
@@ -295,9 +330,16 @@ class YandexMarketWeb(Yandex):
         if len(breadcrumbs) == 0:
             raise YandexMarketWebException("Not found breadcrumbs in %s" % page_url)
 
-        info("breadcrumbs: %s" % repr(breadcrumbs).decode("unicode-escape"))
+        debug("breadcrumbs: %s" % repr(breadcrumbs).decode("unicode-escape"))
 
         return breadcrumbs
+
+    def __parse_model_name(self, html):
+        return element_text(at_css(html, 'h1.b-page-title__title'))
+
+    def __parse_rating(self, html):
+        rating = at_css(html, 'span.b-aura-rating')
+        return int(rating.attrib['data-rate']) if rating is not None else 0
 
     def parse_model_offers_page(self, model_id, hid = None):
         params = {'modelid':model_id}
@@ -317,16 +359,14 @@ class YandexMarketWeb(Yandex):
 
         self.check_region()
         
-        model_name = element_text(at_css(html, 'h1.b-page-title__title'))
-
+        model_name = self.__parse_model_name(html)
         breadcrumbs = self.__parse_breadcrumbs(html)
 
         offers = []
         offers_info_list = css(html, 'div.b-offers__offers')
         for offer in offers_info_list:
-            
-            rating = at_css(offer, 'span.b-aura-rating')
-            rating = int(rating.attrib['data-rate']) if rating is not None else 0
+
+            rating = self.__parse_rating(offer)
 
             rating_link = at_css(offer, 'a.b-rating__link')
             if rating_link is None:

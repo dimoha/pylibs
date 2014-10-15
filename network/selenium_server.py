@@ -198,7 +198,7 @@ class SeleniumDefaultTCPHandler(SocketServer.BaseRequestHandler):
         br = self.__get_browser()
 
         if br is not None:
-            
+
             need_reboot = False
             need_reboot_server = False
 
@@ -378,8 +378,6 @@ class BrowserPool():
                 warning("Server %s in rebooting" % br.server)
                 continue
             
-            info("----- self.last_reboot: %s" % self.last_reboot)
-            info("----- br.existed_session %s: %s, driver %s" % (br, br.existed_session, br.driver))
 
             if br.server.need_reboot and self.last_reboot is None:
                 debug("====> NEED REBOOT SERVER %s" % br.server)
@@ -453,15 +451,17 @@ class Server():
 
     def set_reboot_time(self):
         if self.server_num is not None and self.cnt_servers > 1:
-            if self.reboot_time is None:
-                self.reboot_time = int(time.time())+(self.reboot_minutes*60*self.server_num)
-            else:
-                self.reboot_time = self.reboot_time+(self.reboot_minutes*60*self.cnt_servers)
+            self.reboot_time = int(time.time())+(self.reboot_minutes*60)
+            #if self.reboot_time is None:
+            #    self.reboot_time = int(time.time())+(self.reboot_minutes*60*self.server_num)
+            #else:
+            #    self.reboot_time = self.reboot_time+(self.reboot_minutes*60*self.cnt_servers)
 
     @property
     def need_reboot(self):
 
         if self.reboot_time is not None and self.reboot_time<int(time.time()):
+            info("Need reboot server %s, because reboot_time=%s" % (self.server_num, self.reboot_time))
             return True
         else:
             return False

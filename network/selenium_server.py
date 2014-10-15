@@ -452,10 +452,13 @@ class Server():
     def set_reboot_time(self):
         if self.server_num is not None and self.cnt_servers > 1:
             self.reboot_time = int(time.time())+(self.reboot_minutes*60)
+            info("New reboot time for server %s: %s" % (self.server_num, self.reboot_time))
             #if self.reboot_time is None:
             #    self.reboot_time = int(time.time())+(self.reboot_minutes*60*self.server_num)
             #else:
             #    self.reboot_time = self.reboot_time+(self.reboot_minutes*60*self.cnt_servers)
+        if self.cnt_servers == 1:
+            self.reboot_time = None
 
     @property
     def need_reboot(self):

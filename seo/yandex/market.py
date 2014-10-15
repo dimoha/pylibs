@@ -162,8 +162,13 @@ class YandexMarketWeb(Yandex):
         html = self.request(url)
         self.check_region()
 
-        popular_link = at_xpath(self.html, u'//a[@class="top-3-models__title-link" and contains(text(), "Популярные")]').attrib['href']
-        popular_link = '%s%s'  % (self.host, popular_link)
+
+        popular_link = at_xpath(self.html, u'//a[@class="top-3-models__title-link" and contains(text(), "Популярные")]')
+        if popular_link is not None:
+            popular_link = popular_link.attrib['href']
+            popular_link = '%s%s'  % (self.host, popular_link)
+        else:
+            popular_link = url
         info("popular_link: %s" % popular_link) 
         return self.get_products_list(popular_link, limit)
 
@@ -241,6 +246,10 @@ class YandexMarketWeb(Yandex):
             self.check_region()
 
             positions = css(html, 'div.b-offers_type_guru')
+            if len(positions) == 0:
+                raise YandexMarket404Exception
+            #positions = css(html, 'div.b-serp__item')
+
             for position in positions:
                 if 'id' in position.attrib:
 
@@ -299,10 +308,11 @@ class YandexMarketWeb(Yandex):
 
             page_rewiews = xpath(self.html, '//div[contains(@id, "review-")]')
             for rewiew in page_rewiews:
+                review_id = int(rewiew.attrib['id'].replace("review-", ""))
                 userid = at_css(rewiew, 'a.b-aura-username')
                 userid = userid.attrib['href'].split('/')[2] if userid is not None else None
                 rating = self.__parse_rating(rewiew)
-                rewiews.append({'userid':userid, 'rating':rating})
+                rewiews.append({'userid':userid, 'rating':rating, "id":review_id})
 
             next_url = at_xpath(html, '//a[@class="b-pager__next"]')
             if next_url is None:

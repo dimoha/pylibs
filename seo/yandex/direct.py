@@ -16,6 +16,7 @@ class YandexDirectCaptchaException(YandexDirectException):
 class YandexDirect(Yandex):
     
     limit_symbols = 4096
+    freq_types = ['yandex_exact', 'yandex_all', 'yandex_in_quotes']
 
     def is_captcha(self, *args, **kwargs):
         captcha_found = super(YandexDirect, self).is_captcha(*args, **kwargs)
@@ -36,6 +37,10 @@ class YandexDirect(Yandex):
 
     def get_freqs_looped(self, keywords, region_id = 0, freq_type='yandex_exact'):
 
+
+            if freq_type not in self.freq_types:
+                raise YandexDirectException('Unsupported freq type (%s). Use one of: %s' % (freq_type, self.freq_types))
+
             freq_res = {}
             for kwd in keywords:
                 freq_res[kwd] = None
@@ -43,7 +48,7 @@ class YandexDirect(Yandex):
             while True:
                 if len(keywords)>0:
                     info("Send %s for freq" % len(keywords))
-                    freqs = self.get_freqs(keywords, region_id, freq_type)
+                    freqs = self.__get_freqs(keywords, region_id, freq_type)
                     if len(freqs) == 0:
                         raise YandexDirectException('Freqs not calculated for %s phrases' % len(keywords))
                     for kwd, val in freqs.iteritems():
@@ -54,7 +59,7 @@ class YandexDirect(Yandex):
                     break
             return freq_res
 
-    def get_freqs(self, keywords, region_id = 0, freq_type='yandex_exact'):
+    def __get_freqs(self, keywords, region_id = 0, freq_type='yandex_exact'):
 
         self.result = {}
         for keyword in keywords:
@@ -99,8 +104,10 @@ class YandexDirect(Yandex):
         c = 0
         for req in requests:
             try:
-                freqs = self.get_freqs_one(req, region_id)
+                freqs = self.__get_freqs_one(req, region_id)
                 for phraseTpl, freq in freqs.iteritems():
+                    if freq_type == 'yandex_all' and phraseTpl.startswith('"'):
+                        phraseTpl = phraseTpl.strip('" ')
                     if phraseTpl in to_check:
                         thisID = to_check[phraseTpl]
                         self.result[thisID] = freq
@@ -129,7 +136,7 @@ class YandexDirect(Yandex):
         return self.result
 
 
-    def get_freqs_one(self, request, region_id = 0):
+    def __get_freqs_one(self, request, region_id = 0):
     
         freqs = {}
     

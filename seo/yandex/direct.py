@@ -16,7 +16,7 @@ class YandexDirectCaptchaException(YandexDirectException):
 class YandexDirect(Yandex):
     
     limit_symbols = 4096
-    freq_types = ['yandex_exact', 'yandex_all', 'yandex_in_quotes']
+    freq_types = ['yandex_exact', 'yandex_total', 'yandex_in_quotes']
 
     def is_captcha(self, *args, **kwargs):
         captcha_found = super(YandexDirect, self).is_captcha(*args, **kwargs)
@@ -106,7 +106,7 @@ class YandexDirect(Yandex):
             try:
                 freqs = self.__get_freqs_one(req, region_id)
                 for phraseTpl, freq in freqs.iteritems():
-                    if freq_type == 'yandex_all' and phraseTpl.startswith('"'):
+                    if freq_type == 'yandex_total' and phraseTpl.startswith('"'):
                         phraseTpl = phraseTpl.strip('" ')
                     if phraseTpl in to_check:
                         thisID = to_check[phraseTpl]

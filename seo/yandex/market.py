@@ -182,6 +182,8 @@ class YandexMarketWeb(Yandex):
         for supcat in supcats:
             if "http://" in supcat.attrib['href']:
                 continue
+            if supcat.attrib['href'].endswith('hid=90764'):
+                continue
             cat_href = self.host + supcat.attrib['href']
             cat_name = element_text(supcat)
             info('%s => %s' % (cat_name, cat_href))

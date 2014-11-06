@@ -157,6 +157,51 @@ class YandexMarketWeb(Yandex):
             if self.region.lower() != current_region.lower():
                 raise YandexMarketWebException("Incorrect region: %s (need %s)" % (current_region, self.region))
 
+    def __get_supcats(self, url, with_models):
+        info(url)
+        try_cnt = 10
+        for i in range(try_cnt):
+            try:
+                html = self.request(url)
+                break
+            except Exception as e:
+                if i == (try_cnt-1):
+                    raise
+                else:
+                    warning("__get_supcats error %s: %s" % (i, e))
+                    continue
+
+
+
+        links = []
+        if with_models:
+            supcats = xpath(html, '//div[@class="supcat guru"]/a')
+        else:
+            supcats = xpath(html, '//td[@class="categories"]/div[contains(@class, "supcat")]/a')
+
+        for supcat in supcats:
+            if "http://" in supcat.attrib['href']:
+                continue
+            cat_href = self.host + supcat.attrib['href']
+            cat_name = element_text(supcat)
+            info('%s => %s' % (cat_name, cat_href))
+            links.append({'name':cat_name, 'href':cat_href})
+        return links
+
+    def get_categories(self, url = None, with_models = True):
+        if not hasattr(self, 'categories'):
+            self.categories = []
+
+        if url is None:
+            url = '%s/catalog.xml' % self.host
+
+        cats = self.__get_supcats(url, with_models)
+        for cat in cats:
+            self.categories.append(cat)
+            self.get_categories(cat['href'], with_models)
+
+        return self.categories
+
     def get_popular_list(self, hid, limit = 200):
         url = '%s/catalog.xml?hid=%s&track=pieces' % (self.host, hid)
         html = self.request(url)

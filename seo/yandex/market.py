@@ -317,7 +317,7 @@ class YandexMarketWeb(Yandex):
                 break
             else:
                 url = '%s%s' % (self.host, next_url.attrib['href'])
-                debug("next url: %s" % url)
+                info("next url: %s" % url)
 
             if limit is not None and len(products) >= limit:
                 products = products[0:limit]
@@ -380,25 +380,27 @@ class YandexMarketWeb(Yandex):
 
     def __parse_breadcrumbs(self, html):
         breadcrumbs = []
-        breadcrumbs_a = xpath(html, '//a[@class="b-breadcrumbs__link"]')
+        #breadcrumbs_a = xpath(html, '//a[@class="b-breadcrumbs__link"]')
+        breadcrumbs_a = xpath(html, '//ul[@class="breadcrumbs2"]//a[@class="link"]')
+
         for a in breadcrumbs_a:
             breadcrumbs.append({'url':a.attrib['href'].decode('utf-8'), 'title':element_text(a).decode('utf-8')})
 
         if len(breadcrumbs) == 0:
-            raise YandexMarketWebException("Not found breadcrumbs in %s" % page_url)
+            raise YandexMarketWebException("Not found breadcrumbs")
 
         debug("breadcrumbs: %s" % repr(breadcrumbs).decode("unicode-escape"))
 
         return breadcrumbs
 
     def __parse_model_name(self, html):
-        return element_text(at_css(html, 'h1.b-page-title__title'))
+        return element_text(at_css(html, 'h1.title'))#b-page-title__title
 
     def __parse_rating(self, html):
         rating = at_css(html, 'span.b-aura-rating')
         return int(rating.attrib['data-rate']) if rating is not None else 0
 
-    def parse_model_offers_page(self, model_id, hid = None):
+    def parse_model_offers_page(self, model_id, hid = None, limit=20):
         params = {'modelid':model_id}
         if hid is not None:
             params['hid'] = hid
@@ -406,50 +408,71 @@ class YandexMarketWeb(Yandex):
         page_url = '%s/offers.xml?%s' % (self.host, params)
         debug(page_url)
 
-        html = self.request(page_url)
-
-        title = element_text(at_xpath(html, '//title'))
-        info("title: %s" % title)
-        if title == '404':
-            raise YandexMarket404Exception("Model %s not found" % model_id)
-
-
-        self.check_region()
-        
-        model_name = self.__parse_model_name(html)
-        breadcrumbs = self.__parse_breadcrumbs(html)
-
         offers = []
-        offers_info_list = css(html, 'div.b-offers__offers')
-        for offer in offers_info_list:
 
-            rating = self.__parse_rating(offer)
+        model_name = None
+        breadcrumbs = None
+        
+        while True:
+            html = self.request(page_url)
 
-            rating_link = at_css(offer, 'a.b-rating__link')
-            if rating_link is None:
-                rating_link = at_css(offer, 'a.b-offers__price__grade')
-            shop_id = int(rating_link.attrib['href'].split("/")[2])
+            title = element_text(at_xpath(html, '//title'))
+            info("title: %s" % title)
+            if title == '404':
+                raise YandexMarket404Exception("Model %s not found" % model_id)
 
-            price = element_text(at_xpath(offer, './/span[@class="b-old-prices__num"]'))
-            price = float(re.sub("[^\d\.]+(?is)", "", price.replace(",", ".")))
-            shop_name = toUnicode(element_text(at_css(offer, 'div.b-offers__feats a.shop-link')))
-            product_name = toUnicode(element_text(at_css(offer, 'a.b-offers__name')))
-            delivery_info = toUnicode(element_text(at_css(offer, 'div.b-offers__delivery span.b-offers__delivery-text')))
-            delivery_cost = None
-            m = re.search(u'Доставка\s+(\d+)\s+руб(?isu)', delivery_info)
-            if m:
-                delivery_cost = m.group(1).strip().replace(",", ".")
-                try:
-                    delivery_cost = float(re.sub("[^\d\.]+(?is)", "", delivery_cost))
-                except Exception as e:
-                    warning("Can't get delivery_cost from string: %s" % delivery_cost)
-                    delivery_cost = None
 
-            offer_dict = {'price':price, 'shop_id':shop_id, 'rating':rating, 'shop_name':shop_name, 'product_name':product_name, "delivery_cost":delivery_cost, "delivery_info":delivery_info}
-            offers.append(offer_dict)
+            self.check_region()
+            
+            if model_name is None:
+                model_name = self.__parse_model_name(html)
+            if breadcrumbs is None:
+                breadcrumbs = self.__parse_breadcrumbs(html)
 
-        info("Found %s offers" % len(offers))
-        return {'breadcrumbs':breadcrumbs, "model_name":model_name, "offers":offers}
+            
+            offers_info_list = css(html, 'div.b-offers__offers')
+            for offer in offers_info_list:
+
+                rating = self.__parse_rating(offer)
+
+                rating_link = at_css(offer, 'a.b-rating__link')
+                if rating_link is None:
+                    rating_link = at_css(offer, 'a.b-offers__price__grade')
+                shop_id = int(rating_link.attrib['href'].split("/")[2])
+
+                price = element_text(at_xpath(offer, './/span[@class="b-old-prices__num"]'))
+                price = float(re.sub("[^\d\.]+(?is)", "", price.replace(",", ".")))
+                shop_name = toUnicode(element_text(at_css(offer, 'div.b-offers__feats a.shop-link')))
+                product_name = toUnicode(element_text(at_css(offer, 'a.b-offers__name')))
+                delivery_info = toUnicode(element_text(at_css(offer, 'div.b-offers__delivery span.b-offers__delivery-text')))
+                delivery_cost = None
+                m = re.search(u'Доставка\s+(\d+)\s+руб(?isu)', delivery_info)
+                if m:
+                    delivery_cost = m.group(1).strip().replace(",", ".")
+                    try:
+                        delivery_cost = float(re.sub("[^\d\.]+(?is)", "", delivery_cost))
+                    except Exception as e:
+                        warning("Can't get delivery_cost from string: %s" % delivery_cost)
+                        delivery_cost = None
+
+                offer_dict = {'price':price, 'shop_id':shop_id, 'rating':rating, 'shop_name':shop_name, 'product_name':product_name, "delivery_cost":delivery_cost, "delivery_info":delivery_info}
+                offers.append(offer_dict)
+
+            
+                next_url = at_xpath(html, '//a[@class="b-pager__next"]')
+                if next_url is None:
+                    break
+                else:
+                    page_url = '%s%s' % (self.host, next_url.attrib['href'])
+                    debug("next url: %s" % page_url)
+
+                if limit is not None and len(offers) >= limit:
+                    offers = offers[0:limit]
+                    break
+
+
+            info("Found %s offers" % len(offers))
+            return {'breadcrumbs':breadcrumbs, "model_name":model_name, "offers":offers}
 
 
 

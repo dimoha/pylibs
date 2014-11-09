@@ -472,8 +472,8 @@ class YandexMarketWeb(Yandex):
                 break
 
 
-            info("Found %s offers" % len(offers))
-            return {'breadcrumbs':breadcrumbs, "model_name":model_name, "offers":offers}
+        info("Found %s offers" % len(offers))
+        return {'breadcrumbs':breadcrumbs, "model_name":model_name, "offers":offers}
 
 
 

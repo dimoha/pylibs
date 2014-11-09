@@ -414,6 +414,7 @@ class YandexMarketWeb(Yandex):
         breadcrumbs = None
         
         while True:
+            info(page_url)
             html = self.request(page_url)
 
             title = element_text(at_xpath(html, '//title'))
@@ -459,16 +460,16 @@ class YandexMarketWeb(Yandex):
                 offers.append(offer_dict)
 
             
-                next_url = at_xpath(html, '//a[@class="b-pager__next"]')
-                if next_url is None:
-                    break
-                else:
-                    page_url = '%s%s' % (self.host, next_url.attrib['href'])
-                    debug("next url: %s" % page_url)
+            next_url = at_xpath(html, '//a[@class="b-pager__next"]')
+            if next_url is None:
+                break
+            else:
+                page_url = '%s%s' % (self.host, next_url.attrib['href'])
+                debug("next url: %s" % page_url)
 
-                if limit is not None and len(offers) >= limit:
-                    offers = offers[0:limit]
-                    break
+            if limit is not None and len(offers) >= limit:
+                offers = offers[0:limit]
+                break
 
 
             info("Found %s offers" % len(offers))

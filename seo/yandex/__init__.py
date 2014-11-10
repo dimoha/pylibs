@@ -99,7 +99,7 @@ class Yandex(object):
 
 def yandex_authorization(br):
     
-    if hasattr(br, 'yandex_account'):
+    if hasattr(br, 'yandex_account') and br.yandex_account is not None:
 
         user = br.yandex_account['user']
         password = br.yandex_account['password']

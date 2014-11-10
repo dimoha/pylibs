@@ -328,6 +328,59 @@ class YandexMarketWeb(Yandex):
         debug("parsed: %s positions" % len(products))
         return products
 
+    def parse_model_page(self, model_id, hid = None):
+        params = {'modelid':model_id, "track":'tabs'}
+        if hid is not None:
+            params['hid'] = hid
+        params = urllib.urlencode(params)
+        page_url = '%s/model.xml?%s' % (self.host, params)
+        info(page_url)
+
+        try_cnt = 6
+        for i in range(try_cnt):
+            try:
+                html = self.request(page_url)
+                break
+            except Exception as e:
+                if i == (try_cnt-1):
+                    raise
+                else:
+                    warning("parse_model_page error %s: %s" % (i, e))
+                    continue        
+    
+        prices_range = at_xpath(html, '//span[@class="b-prices b-prices__range"]')
+        if prices_range is None:
+            prices_range = at_xpath(html, '//span[@class="price__int"]')
+            if prices_range is None:
+                raise YandexMarket404Exception
+            prices_range = element_text(prices_range)
+            prices_range = [prices_range, prices_range]
+        else:
+            prices_range = element_text(prices_range).strip().split("…")
+    
+        prices_range = map(lambda x:re.sub("[^\d']+", "", x.strip()), prices_range)
+        
+        rating_value = at_xpath(html, '//meta[@itemprop="ratingValue"]')
+        if rating_value is not None:
+            try:
+                rating_value = float(rating_value.attrib['content'])
+            except:
+                rating_value = None
+
+        rating_cnt = at_xpath(html, '//span[@class="b-rating-text"]')
+        if rating_cnt is not None:
+            rating_cnt = int(re.sub("[^\d']+", "", element_text(rating_cnt)))
+
+        cnts = {"offers":0, "geo":0, "opinions":0, "overviews":0, "forums":0}
+        for k,v in cnts.iteritems():
+            c = at_css(html, 'a.product-tabs__tab-%s span.product-tabs__count' % k)
+            if c is not None:
+                cnts[k] = int(element_text(c))
+
+        return {'name':self.__parse_model_name(html), 'prices_range':prices_range, 
+                    'rating_value':rating_value, 'rating_cnt':rating_cnt, "cnts":cnts}
+
+
     def parse_model_reviews_page(self, model_id, hid = None, limit = None):
 
         page_url = '%s/product/%s/reviews' % (self.host, model_id)

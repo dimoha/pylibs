@@ -99,48 +99,46 @@ class Yandex(object):
 
 def yandex_authorization(br):
     
-    user = None
-    password = None
+    if hasattr(br, 'yandex_account'):
+
+        user = br.yandex_account['user']
+        password = br.yandex_account['password']
+
+        login_input = at_xpath(br.html(),'//input[@id="login"]')
+        auth_form = at_xpath(br.html(), '//form[contains(@action,"passport")]')
+
+        if auth_form is None and login_input is not None:
+            _auth_form = at_xpath(br.html(),'//form')
+            if 'login' in _auth_form.fields:
+                info("catched strange auth form")
+                auth_form = _auth_form
 
 
-    user = br.yandex_account['user']
-    password = br.yandex_account['password']
-    
-    login_input = at_xpath(br.html(),'//input[@id="login"]')
-    auth_form = at_xpath(br.html(), '//form[contains(@action,"passport")]')
-
-    if auth_form is None and login_input is not None:
-        _auth_form = at_xpath(br.html(),'//form')
-        if 'login' in _auth_form.fields:
-            info("catched strange auth form")
-            auth_form = _auth_form
+        if auth_form is not None:
+            info('Start auth in Yandex: %s => %s' % (user, password))
+            auth_form.fields['login'] = unicode(user)
+            auth_form.fields['passwd'] = unicode(password)
+            auth_form.fields['twoweeks'] = True
 
 
-    if auth_form is not None:
-        info('Start auth in Yandex: %s => %s' % (user, password))
-        auth_form.fields['login'] = unicode(user)
-        auth_form.fields['passwd'] = unicode(password)
-        auth_form.fields['twoweeks'] = True
-        
-        
-        debug("START POST")
-        br.postForm(auth_form,{'timestamp':time.time()})
-        debug("END POST")
+            debug("START POST")
+            br.postForm(auth_form,{'timestamp':time.time()})
+            debug("END POST")
 
-        auth_form_again = at_xpath(br.html(),'//form[contains(@action,"passport")]')
-        login_form_again = at_xpath(br.html(),'//input[@id="login"]')
+            auth_form_again = at_xpath(br.html(),'//form[contains(@action,"passport")]')
+            login_form_again = at_xpath(br.html(),'//input[@id="login"]')
 
-        if auth_form_again is not None:
-            raise YandexAuthorizationException('Authorization Fail. Auth form Twice.')
+            if auth_form_again is not None:
+                raise YandexAuthorizationException('Authorization Fail. Auth form Twice.')
 
-        if at_xpath(br.html(),'//input[@id="login"]') is not None:
-            raise YandexAuthorizationException('Authorization Fail. input login Twice.')
+            if at_xpath(br.html(),'//input[@id="login"]') is not None:
+                raise YandexAuthorizationException('Authorization Fail. input login Twice.')
 
-        if 'ваш браузер не поддерживает автоматическое перенаправление' in br.body():
-            info('Auto refrsh page detected, perform_url: %s' % br.perform_url)
-            br.get(br.perform_url)
-            if br.page_handler.__name__=='yandex_authorization':
-                br.page_handler = None
-        else:
-            debug("Auth success!")
+            if 'ваш браузер не поддерживает автоматическое перенаправление' in br.body():
+                info('Auto refrsh page detected, perform_url: %s' % br.perform_url)
+                br.get(br.perform_url)
+                if br.page_handler.__name__=='yandex_authorization':
+                    br.page_handler = None
+            else:
+                debug("Auth success!")
 

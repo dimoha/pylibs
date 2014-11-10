@@ -731,8 +731,8 @@ def get_sql_session(DATABASE):
     sql_engine = get_sql_engine(DATABASE)
     return sessionmaker(bind=sql_engine)()
 
-def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = None, PORT_2 = None, remote_browser = None):
-    
+def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = None, PORT_2 = None, remote_browser = None,
+                  restart = False):
 
     # create table if not exists
     metadata = SeleniumSession.metadata
@@ -756,6 +756,15 @@ def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = Non
         kill_process(proc_name)
         kill_process(pool_name)
 
+    def restart_service():
+        debug("Stop server.")
+        for i in range(10):
+            kill_service()
+            if get_cnt_prc()>0:
+                time.sleep(1)
+            else:
+                break
+
     def usage():
         print """
     USAGE: %s [options]
@@ -771,19 +780,15 @@ def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = Non
         usage()
         sys.exit()
 
+    if restart:
+        opts.append(('-r', True))
     reboot_nodes = False
     for o, value in opts:
         if o in ("-h", "--help"):
             usage()
             sys.exit()
         elif o in ("-s", "--stop", "-r", "--reload", "-n", "--reboot_nodes"):
-            debug("Stop server.")
-            for i in range(10):
-                kill_service()
-                if get_cnt_prc()>0:
-                    time.sleep(1)
-                else:
-                    break
+            restart_service()
             if o in ("-s", "--stop"):
                 sys.exit()
             if o in ("-n", "--reboot_nodes"):

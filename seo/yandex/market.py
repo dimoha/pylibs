@@ -454,7 +454,7 @@ class YandexMarketWeb(Yandex):
         return int(rating.attrib['data-rate']) if rating is not None else 0
 
     def parse_model_offers_page(self, model_id, hid = None, limit=20):
-        params = {'modelid':model_id}
+        params = {'modelid':model_id, 'grhow':'shop'}
         if hid is not None:
             params['hid'] = hid
         params = urllib.urlencode(params)

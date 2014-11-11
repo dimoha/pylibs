@@ -745,7 +745,7 @@ def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = Non
         remote_browser = RemoteBrowser
 
     proc_name = 'SocketServer_%s' % DATABASE['db']
-    pool_name = 'BrowserPoolManager' % DATABASE['db']
+    pool_name = 'BrowserPoolManager_%s' % DATABASE['db']
 
     def get_cnt_prc():
         p1 = processecControl(proc_name, 1, no_exit = True)

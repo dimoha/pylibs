@@ -367,11 +367,12 @@ class YandexMarketWeb(Yandex):
         res['reviews_cnt'] = 0
         res['stars_cnt'] = 0
 
-        if rating_title is None:
+        if rating_title is not None:
             reviews_cnt = re.sub('[^\d]+(?is)', '', rating_title.attrib['title']).strip()
             reviews_cnt = int(reviews_cnt) if reviews_cnt<>'' else 0
             res['reviews_cnt'] = reviews_cnt
             res['stars_cnt'] = int(rating_title.attrib['data-rate'])
+
 
         rating_items = css(html, 'div.b-aura-ratings__item')
         for rating_item in rating_items:

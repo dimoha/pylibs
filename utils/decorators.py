@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-import fcntl, sys
+import fcntl, sys, os
 from logging import info
+
 
 def lock(lockname):
     def decorator(view_func):
@@ -10,7 +11,7 @@ def lock(lockname):
                 fcntl.lockf(f, fcntl.LOCK_EX + fcntl.LOCK_NB)
             except IOError:
                 info("Process already is running.")
-                sys.exit(1)
+                os._exit(1)
             return view_func(*args, **kwargs)
         wrapper_lock.view_func = view_func.view_func if hasattr(view_func, 'view_func') else view_func
         return wrapper_lock

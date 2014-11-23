@@ -243,7 +243,11 @@ class YandexMarketWeb(Yandex):
             positions = css(html, 'div.b-serp__item')
             if len(positions) > 0:
                 m = re.search(u'mvc\.map\("search-results",([^;]+)\);(?isu)', self.transport.unicode())
-                search_json = json.loads(m.group(1).strip())
+                try:
+                    search_json = json.loads(m.group(1).strip())
+                except Exception as e:
+                    error('error %s: %s' % (url, e))
+                    raise
                 glen = len(search_json[0])
                 search_json = search_json[1]
                 info("Found %s positions on page" % len(positions))

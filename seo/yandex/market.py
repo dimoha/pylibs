@@ -239,7 +239,6 @@ class YandexMarketWeb(Yandex):
             
             self.check_region()
 
-            
             positions = css(html, 'div.b-serp__item')
             if len(positions) > 0:
                 m = re.search(u'mvc\.map\("search-results",([^;]+)\);(?isu)', self.transport.unicode())

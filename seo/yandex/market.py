@@ -250,11 +250,12 @@ class YandexMarketWeb(Yandex):
                 for n,position in enumerate(positions):
                     product_link = at_css(position, 'a.b-offers__name')
                     product_name = toUnicode(element_text(product_link))
+                    shop_link = product_link.attrib['href']
                     model_id = int(search_json[n*(1+glen) + glen])
                     price = element_text(at_xpath(position, './/span[@class="b-old-prices__num"]'))
                     price = float(re.sub("[^\d\.]+(?is)", "", price.replace(",", ".")))
                     debug("%s | %s | %s" % (product_name, model_id, price))
-                    product = {'product_name':product_name, "model_id":model_id, "price":price}
+                    product = {'product_name':product_name, "model_id":model_id, "price":price, 'shop_link':shop_link}
                     products.append(product)
             else:
                 break

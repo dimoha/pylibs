@@ -328,6 +328,57 @@ class YandexMarketWeb(Yandex):
         debug("parsed: %s positions" % len(products))
         return products
 
+    def parse_shop_reviews_page(self, shop_id):
+        page_url = '%s/shop/%s/reviews' % (self.host, shop_id)
+        debug(page_url)
+
+
+        try_cnt = 6
+        for i in range(try_cnt):
+            try:
+                html = self.request(page_url)
+                break
+            except Exception as e:
+                if i == (try_cnt-1):
+                    raise
+                else:
+                    warning("parse_shop_reviews_page error %s: %s" % (i, e))
+                    continue
+
+        self.check_region()
+
+        #<span xmlns:mx="https://market.yandex.ru/xmlns" class="b-aura-rating b-aura-rating_state_5 b-aura-rating_size_m"
+        # title="на основе 2560 оценок покупателей и данных службы качества Маркета"
+        # data-title="на основе 2560 оценок покупателей и данных службы качества Маркета" data-rate="5">
+
+        rating_title = at_css(html, 'span.b-aura-rating_size_m')
+
+        res = {}
+        reviews_cnt = re.sub('[^\d]+(?is)', '', rating_title.attrib['title']).strip()
+        reviews_cnt = int(reviews_cnt) if reviews_cnt<>'' else 0
+
+        res['reviews_cnt'] = reviews_cnt
+        res['stars_cnt'] = int(rating_title.attrib['data-rate'])
+
+        res['reviews_1_stars_cnt'] = 0
+        res['reviews_2_stars_cnt'] = 0
+        res['reviews_3_stars_cnt'] = 0
+        res['reviews_4_stars_cnt'] = 0
+        res['reviews_5_stars_cnt'] = 0
+
+        rating_items = css(html, 'div.b-aura-ratings__item')
+        for rating_item in rating_items:
+            sc = at_css(rating_item, 'span.b-aura-rating')
+            sc = int(sc.attrib['data-rate'])
+            ra = element_text(at_css(rating_item, 'a.b-aura-ratings__link'))
+            ra = int(re.sub('[^\d]+(?is)', '', ra).strip())
+            res['reviews_%s_stars_cnt' % sc] = ra
+
+        return res
+
+
+
+
     def parse_model_page(self, model_id, hid = None):
         params = {'modelid':model_id, "track":'tabs'}
         if hid is not None:

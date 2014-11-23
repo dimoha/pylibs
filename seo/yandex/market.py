@@ -4,7 +4,7 @@ from pylibs.network.parser import *
 from pylibs.network.urls import *
 from pylibs.network.browser import BrowserException
 from pylibs.utils.text import toUnicode
-from logging import info, debug, warning
+from logging import info, debug, warning, error
 import re, json, urllib, math
 
 class YandexMarketException(YandexException):
@@ -355,8 +355,12 @@ class YandexMarketWeb(Yandex):
         rating_title = at_css(html, 'span.b-aura-rating_size_m')
 
         res = {}
-        reviews_cnt = re.sub('[^\d]+(?is)', '', rating_title.attrib['title']).strip()
-        reviews_cnt = int(reviews_cnt) if reviews_cnt<>'' else 0
+        try:
+            reviews_cnt = re.sub('[^\d]+(?is)', '', rating_title.attrib['title']).strip()
+            reviews_cnt = int(reviews_cnt) if reviews_cnt<>'' else 0
+        except Exception as e:
+            error('error in %s: %s' % (page_url, e))
+            raise
 
         res['reviews_cnt'] = reviews_cnt
         res['stars_cnt'] = int(rating_title.attrib['data-rate'])

@@ -4,7 +4,7 @@ from pylibs.network.parser import *
 from pylibs.network.urls import *
 from pylibs.network.browser import BrowserException
 from pylibs.utils.text import toUnicode
-from logging import info, debug, warning
+from logging import info, debug, warning, error
 import re, json, urllib, math
 
 class YandexMarketException(YandexException):
@@ -239,22 +239,26 @@ class YandexMarketWeb(Yandex):
             
             self.check_region()
 
-            
             positions = css(html, 'div.b-serp__item')
             if len(positions) > 0:
                 m = re.search(u'mvc\.map\("search-results",([^;]+)\);(?isu)', self.transport.unicode())
+                if m is None:
+                    raise YandexMarketWebException("Not found search-results JSON in %s" % url)
+
                 search_json = json.loads(m.group(1).strip())
+
                 glen = len(search_json[0])
                 search_json = search_json[1]
                 info("Found %s positions on page" % len(positions))
                 for n,position in enumerate(positions):
                     product_link = at_css(position, 'a.b-offers__name')
                     product_name = toUnicode(element_text(product_link))
+                    shop_link = product_link.attrib['href']
                     model_id = int(search_json[n*(1+glen) + glen])
                     price = element_text(at_xpath(position, './/span[@class="b-old-prices__num"]'))
                     price = float(re.sub("[^\d\.]+(?is)", "", price.replace(",", ".")))
                     debug("%s | %s | %s" % (product_name, model_id, price))
-                    product = {'product_name':product_name, "model_id":model_id, "price":price}
+                    product = {'product_name':product_name, "model_id":model_id, "price":price, 'shop_link':shop_link}
                     products.append(product)
             else:
                 break
@@ -327,6 +331,60 @@ class YandexMarketWeb(Yandex):
         debug("category: %s" % cat_name)
         debug("parsed: %s positions" % len(products))
         return products
+
+    def parse_shop_reviews_page(self, shop_id):
+        page_url = '%s/shop/%s/reviews' % (self.host, shop_id)
+        debug(page_url)
+
+
+        try_cnt = 6
+        for i in range(try_cnt):
+            try:
+                html = self.request(page_url)
+                break
+            except Exception as e:
+                if i == (try_cnt-1):
+                    raise
+                else:
+                    warning("parse_shop_reviews_page error %s: %s" % (i, e))
+                    continue
+
+        self.check_region()
+
+        #<span xmlns:mx="https://market.yandex.ru/xmlns" class="b-aura-rating b-aura-rating_state_5 b-aura-rating_size_m"
+        # title="на основе 2560 оценок покупателей и данных службы качества Маркета"
+        # data-title="на основе 2560 оценок покупателей и данных службы качества Маркета" data-rate="5">
+
+        rating_title = at_css(html, 'span.b-aura-rating_size_m')
+
+        res = {}
+        res['reviews_1_stars_cnt'] = 0
+        res['reviews_2_stars_cnt'] = 0
+        res['reviews_3_stars_cnt'] = 0
+        res['reviews_4_stars_cnt'] = 0
+        res['reviews_5_stars_cnt'] = 0
+        res['reviews_cnt'] = 0
+        res['stars_cnt'] = 0
+
+        if rating_title is not None:
+            reviews_cnt = re.sub('[^\d]+(?is)', '', rating_title.attrib['title']).strip()
+            reviews_cnt = int(reviews_cnt) if reviews_cnt<>'' else 0
+            res['reviews_cnt'] = reviews_cnt
+            res['stars_cnt'] = int(rating_title.attrib['data-rate'])
+
+
+        rating_items = css(html, 'div.b-aura-ratings__item')
+        for rating_item in rating_items:
+            sc = at_css(rating_item, 'span.b-aura-rating')
+            sc = int(sc.attrib['data-rate'])
+            ra = element_text(at_css(rating_item, 'a.b-aura-ratings__link'))
+            ra = int(re.sub('[^\d]+(?is)', '', ra).strip())
+            res['reviews_%s_stars_cnt' % sc] = ra
+
+        return res
+
+
+
 
     def parse_model_page(self, model_id, hid = None):
         params = {'modelid':model_id, "track":'tabs'}

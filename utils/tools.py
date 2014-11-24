@@ -70,6 +70,6 @@ def processecControl(name, numcopies, args = None, no_exit = False):
     if cntProcesses>=int(numcopies):
         info("Process "+str(name)+" already exist.")
         if not no_exit:
-            sys.exit()
+            sys.exit(1)
 
     return cntProcesses

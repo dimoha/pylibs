@@ -163,6 +163,8 @@ class YandexDirect(Yandex):
         if len(freqs)==0:
             htm = self.transport.unicode()
             m = re.search('<td width="58%" class="body">[^<]+<p>(.+)</p>[^<]*</td>[^<]*<td[^>]+width="17%"[^>]*>(?isu)', htm)
+            if not m:
+                m = re.search('<p[^>]+class="p-common-error__message">(.+)</p>(?isu)', htm)
             if m:
                 htm = m.group(1).strip()
                 raise YandexDirectException('WordStat return: %s' % htm)

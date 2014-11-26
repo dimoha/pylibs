@@ -332,32 +332,11 @@ class YandexMarketWeb(Yandex):
         debug("parsed: %s positions" % len(products))
         return products
 
-    def parse_shop_reviews_page(self, shop_id, sort = None):
+    def parse_shop_reviews_page(self, shop_id, sort = None, limit = None):
         page_url = '%s/shop/%s/reviews' % (self.host, shop_id)
         if sort is not None:
             page_url = page_url + '?sort_by=%s' % sort
         debug(page_url)
-
-
-        try_cnt = 6
-        for i in range(try_cnt):
-            try:
-                html = self.request(page_url)
-                break
-            except Exception as e:
-                if i == (try_cnt-1):
-                    raise
-                else:
-                    warning("parse_shop_reviews_page error %s: %s" % (i, e))
-                    continue
-
-        self.check_region()
-
-        #<span xmlns:mx="https://market.yandex.ru/xmlns" class="b-aura-rating b-aura-rating_state_5 b-aura-rating_size_m"
-        # title="на основе 2560 оценок покупателей и данных службы качества Маркета"
-        # data-title="на основе 2560 оценок покупателей и данных службы качества Маркета" data-rate="5">
-
-        rating_title = at_css(html, 'span.b-aura-rating_size_m')
 
         res = {}
         res['reviews_1_stars_cnt'] = 0
@@ -367,15 +346,20 @@ class YandexMarketWeb(Yandex):
         res['reviews_5_stars_cnt'] = 0
         res['reviews_cnt'] = 0
         res['stars_cnt'] = 0
+        res['reviews'] = self.__parse_reviews_from_page(page_url, limit)
 
+        #<span xmlns:mx="https://market.yandex.ru/xmlns" class="b-aura-rating b-aura-rating_state_5 b-aura-rating_size_m"
+        # title="на основе 2560 оценок покупателей и данных службы качества Маркета"
+        # data-title="на основе 2560 оценок покупателей и данных службы качества Маркета" data-rate="5">
+
+        rating_title = at_css(self.html, 'span.b-aura-rating_size_m')
         if rating_title is not None:
             reviews_cnt = re.sub('[^\d]+(?is)', '', rating_title.attrib['title']).strip()
             reviews_cnt = int(reviews_cnt) if reviews_cnt<>'' else 0
             res['reviews_cnt'] = reviews_cnt
             res['stars_cnt'] = int(rating_title.attrib['data-rate'])
 
-
-        rating_items = css(html, 'div.b-aura-ratings__item')
+        rating_items = css(self.html, 'div.b-aura-ratings__item')
         for rating_item in rating_items:
             sc = at_css(rating_item, 'span.b-aura-rating')
             sc = int(sc.attrib['data-rate'])
@@ -383,18 +367,7 @@ class YandexMarketWeb(Yandex):
             ra = int(re.sub('[^\d]+(?is)', '', ra).strip())
             res['reviews_%s_stars_cnt' % sc] = ra
 
-        res['reviews'] = []
-        page_reviews = xpath(html, '//div[contains(@id, "review-")]')
-        for review in page_reviews:
-            review_id = int(review.attrib['id'].replace("review-", ""))
-            userid = at_css(review, 'a.b-aura-username')
-            userid = userid.attrib['href'].split('/')[2] if userid is not None else None
-            rating = self.__parse_rating(review)
-            res['reviews'].append({'userid':userid, 'rating':rating, "id":review_id})
-
         return res
-
-
 
 
     def parse_model_page(self, model_id, hid = None):
@@ -450,13 +423,7 @@ class YandexMarketWeb(Yandex):
                     'rating_value':rating_value, 'rating_cnt':rating_cnt, "cnts":cnts}
 
 
-    def parse_model_reviews_page(self, model_id, hid = None, limit = None):
-
-        page_url = '%s/product/%s/reviews' % (self.host, model_id)
-        if hid is not None:
-            page_url = page_url + "?hid=" + str(hid)
-
-        debug(page_url)
+    def __parse_reviews_from_page(self, page_url, limit = None):
 
         rewiews = []
         while True:
@@ -494,8 +461,21 @@ class YandexMarketWeb(Yandex):
                 rewiews = rewiews[0:limit]
                 break
 
-        model_name = self.__parse_model_name(html)
-        breadcrumbs = self.__parse_breadcrumbs(html)
+        return rewiews
+
+
+    def parse_model_reviews_page(self, model_id, hid = None, limit = None):
+
+        page_url = '%s/product/%s/reviews' % (self.host, model_id)
+        if hid is not None:
+            page_url = page_url + "?hid=" + str(hid)
+
+        debug(page_url)
+
+        rewiews = self.__parse_reviews_from_page(page_url, limit)
+
+        model_name = self.__parse_model_name(self.html)
+        breadcrumbs = self.__parse_breadcrumbs(self.html)
         info("Parsed %s reviews from model_id=%s" % (len(rewiews), model_id))
 
         return {"breadcrumbs":breadcrumbs, "model_name":model_name, "rewiews":rewiews}

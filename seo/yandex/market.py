@@ -332,8 +332,10 @@ class YandexMarketWeb(Yandex):
         debug("parsed: %s positions" % len(products))
         return products
 
-    def parse_shop_reviews_page(self, shop_id):
+    def parse_shop_reviews_page(self, shop_id, sort = None):
         page_url = '%s/shop/%s/reviews' % (self.host, shop_id)
+        if sort is not None:
+            page_url = page_url + '?sort_by=%s' % sort
         debug(page_url)
 
 
@@ -380,6 +382,15 @@ class YandexMarketWeb(Yandex):
             ra = element_text(at_css(rating_item, 'a.b-aura-ratings__link'))
             ra = int(re.sub('[^\d]+(?is)', '', ra).strip())
             res['reviews_%s_stars_cnt' % sc] = ra
+
+        res['reviews'] = []
+        page_reviews = xpath(html, '//div[contains(@id, "review-")]')
+        for review in page_reviews:
+            review_id = int(review.attrib['id'].replace("review-", ""))
+            userid = at_css(review, 'a.b-aura-username')
+            userid = userid.attrib['href'].split('/')[2] if userid is not None else None
+            rating = self.__parse_rating(review)
+            res['reviews'].append({'userid':userid, 'rating':rating, "id":review_id})
 
         return res
 

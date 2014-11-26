@@ -338,6 +338,7 @@ class YandexMarketWeb(Yandex):
             page_url = page_url + '?sort_by=%s' % sort
         debug(page_url)
 
+
         res = {}
         res['reviews_1_stars_cnt'] = 0
         res['reviews_2_stars_cnt'] = 0

@@ -454,7 +454,7 @@ class YandexMarketWeb(Yandex):
             page_rewiews = xpath(self.html, '//div[contains(@id, "review-")]')
             for rewiew in page_rewiews:
                 date_publish = at_xpath(rewiew, './/meta[@itemprop="datePublished"]').attrib['content']
-                date_publish = datetime.strptime(date_publish, '%Y-%m-%dT%H:%I:%S')
+                date_publish = datetime.strptime(date_publish, '%Y-%m-%dT%H:%M:%S')
                 review_id = int(rewiew.attrib['id'].replace("review-", ""))
                 userid = at_css(rewiew, 'a.b-aura-username')
                 userid = userid.attrib['href'].split('/')[2] if userid is not None else None

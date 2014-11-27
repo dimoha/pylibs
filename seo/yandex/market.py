@@ -220,7 +220,7 @@ class YandexMarketWeb(Yandex):
         return self.get_products_list(popular_link, limit)
 
 
-    def get_shop_offers(self, shop_id, limit = None):
+    def get_shop_offers(self, shop_id, limit = None, offers_without_region = False):
         url = '%s/search.xml?fesh=%s' % (self.host, shop_id)
         try_cnt = 6
         products = []

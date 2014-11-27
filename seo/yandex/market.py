@@ -451,6 +451,7 @@ class YandexMarketWeb(Yandex):
 
             self.check_region()
 
+            page_rewiews = xpath(self.html, '//div[contains(@id, "review-")]')
             for rewiew in page_rewiews:
                 date_publish = at_xpath(rewiew, './/meta[@itemprop="datePublished"]').attrib['content']
                 date_publish = datetime.strptime(date_publish, '%Y-%m-%dT%H:%I:%S')

@@ -541,7 +541,9 @@ class RemoteBrowser():
         self.pool_id = None
         self.last_url_data = None
 
-
+    def setCookie(self, cname, cvalue, cdomain = None, cpath = None, cexpires = int(time.time()) + 3600):
+        cookie = {'name' : cname, 'value' : str(cvalue), "path":(cpath or "/"), "domain":cdomain, "expiry":cexpires}
+        self.driver.add_cookie(cookie)
 
     def __str__(self):
         return '%s at %s' % (self.name, self.host)

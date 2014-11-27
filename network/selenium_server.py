@@ -784,7 +784,7 @@ def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = Non
 
     if restart:
         opts.append(('-r', True))
-    print opts
+
     reboot_nodes = False
     for o, value in opts:
         if o in ("-h", "--help"):

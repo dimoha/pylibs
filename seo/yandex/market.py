@@ -351,7 +351,10 @@ class YandexMarketWeb(Yandex):
         shop_name = at_xpath(self.html, '//span[@itemprop="name"]')
         if shop_name is None:
             raise YandexMarket404Exception
+
         res['shop_name'] = element_text(shop_name).strip()
+        if res['shop_name'] == "":
+            raise YandexMarket404Exception
 
         #<span xmlns:mx="https://market.yandex.ru/xmlns" class="b-aura-rating b-aura-rating_state_5 b-aura-rating_size_m"
         # title="на основе 2560 оценок покупателей и данных службы качества Маркета"

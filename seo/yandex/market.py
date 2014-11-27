@@ -348,7 +348,10 @@ class YandexMarketWeb(Yandex):
         res['reviews_cnt'] = 0
         res['stars_cnt'] = 0
         res['reviews'] = self.__parse_reviews_from_page(page_url, limit)
-        res['shop_name'] = element_text(at_xpath(self.html, '//span[@itemprop="name"]')).strip()
+        shop_name = at_xpath(self.html, '//span[@itemprop="name"]')
+        if shop_name is None:
+            raise YandexMarket404Exception
+        res['shop_name'] = element_text(shop_name).strip()
 
         #<span xmlns:mx="https://market.yandex.ru/xmlns" class="b-aura-rating b-aura-rating_state_5 b-aura-rating_size_m"
         # title="на основе 2560 оценок покупателей и данных службы качества Маркета"

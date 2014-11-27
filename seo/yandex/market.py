@@ -6,6 +6,7 @@ from pylibs.network.browser import BrowserException
 from pylibs.utils.text import toUnicode
 from logging import info, debug, warning, error
 import re, json, urllib, math
+from datetime import datetime
 
 class YandexMarketException(YandexException):
     pass
@@ -450,13 +451,14 @@ class YandexMarketWeb(Yandex):
 
             self.check_region()
 
-            page_rewiews = xpath(self.html, '//div[contains(@id, "review-")]')
             for rewiew in page_rewiews:
+                date_publish = at_xpath(rewiew, './/meta[@itemprop="datePublished"]').attrib['content']
+                date_publish = datetime.strptime(date_publish, '%Y-%m-%dT%H:%I:%S')
                 review_id = int(rewiew.attrib['id'].replace("review-", ""))
                 userid = at_css(rewiew, 'a.b-aura-username')
                 userid = userid.attrib['href'].split('/')[2] if userid is not None else None
                 rating = self.__parse_rating(rewiew)
-                rewiews.append({'userid':userid, 'rating':rating, "id":review_id})
+                rewiews.append({'userid':userid, 'rating':rating, "id":review_id, 'date_publish':date_publish})
 
             next_url = at_xpath(html, '//a[@class="b-pager__next"]')
             if next_url is None:

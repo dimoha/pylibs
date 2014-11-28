@@ -809,6 +809,7 @@ def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = Non
     SocketServer.TCPServer.allow_reuse_address = True
     info("Start serve %s:%s" % (HOST, PORT))
     info("tcp_handler: %s" % tcp_handler)
+    info("remote_browser: %s" % remote_browser)
     
     server = ThreadedTCPServer((HOST, PORT), tcp_handler)
 

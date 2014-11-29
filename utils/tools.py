@@ -6,10 +6,9 @@ def kill_process(mask):
     c = 0
     tPid = str(os.getpid())
     command = "ps aux | grep '"+str(mask)+"' | grep -v 'defunct' | grep -v grep | grep -v "+str(tPid)+""
-    info(command)
+    debug(command)
     processes = os.popen(command).read().strip()
-    info("mask: %s" % mask)
-    info("processes: %s" % processes)
+    debug("processes: %s" % processes)
     for onestr in processes.split("\n"):
         try:
             thisStrPid = onestr.split()[1]

@@ -806,6 +806,7 @@ def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = Non
     
     HOST = SELENIUM_SERVER['host']
     PORT = SELENIUM_SERVER['port']
+    PORT = 7200
     PORT_2 = PORT + 1 if PORT_2 is None else PORT_2
     SocketServer.TCPServer.allow_reuse_address = True
     info("Start serve %s:%s" % (HOST, PORT))

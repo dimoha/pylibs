@@ -148,7 +148,10 @@ class PersistentWebdriver(webdriver.Remote):
 
 
 class ThreadedTCPServer(SocketServer.ForkingMixIn, SocketServer.TCPServer): #ThreadingMixIn
-    allow_reuse_address = True
+    def __init__(self, *args, **kwargs):
+        self.allow_reuse_address = True
+        SocketServer.TCPServer.__init__(self, *args, **kwargs)
+
     def serve_forever(self, address, *args, **kwargs):
         self.address = address
         return SocketServer.TCPServer.serve_forever(self, *args, **kwargs)

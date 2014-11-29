@@ -6,6 +6,7 @@ def kill_process(mask):
     c = 0
     tPid = str(os.getpid())
     command = "ps aux | grep '"+str(mask)+"' | grep -v 'defunct' | grep -v grep | grep -v "+str(tPid)+""
+    info(command)
     processes = os.popen(command).read().strip()
     info("mask: %s" % mask)
     info("processes: %s" % processes)

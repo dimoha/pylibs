@@ -5,7 +5,8 @@ from logging import info
 def kill_process(mask):
     c = 0
     tPid = str(os.getpid())
-    processes = os.popen( "ps aux | grep '"+str(mask)+"' | grep -v 'defunct' | grep -v grep | grep -v "+str(tPid)+"").read().strip()
+    command = "ps aux | grep '"+str(mask)+"' | grep -v 'defunct' | grep -v grep | grep -v "+str(tPid)+""
+    processes = os.popen(command).read().strip()
     info("mask: %s" % mask)
     info("processes: %s" % processes)
     for onestr in processes.split("\n"):

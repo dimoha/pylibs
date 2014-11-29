@@ -6,13 +6,14 @@ def kill_process(mask):
     c = 0
     tPid = str(os.getpid())
     processes = os.popen( "ps aux | grep '"+str(mask)+"' | grep -v 'defunct' | grep -v grep | grep -v "+str(tPid)+"").read().strip()
+    print "mask: %s" % mask
+    print "processes: %s" % processes
     for onestr in processes.split("\n"):
         try:
             thisStrPid = onestr.split()[1]
             if thisStrPid!=tPid:
                 if mask in onestr:
                     c += 1
-
                     os.popen("kill -9 "+str(thisStrPid))
         except Exception as e:
             pass

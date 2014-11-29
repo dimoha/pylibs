@@ -808,11 +808,11 @@ def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = Non
     PORT_2 = PORT + 1 if PORT_2 is None else PORT_2
     SocketServer.TCPServer.allow_reuse_address = True
     info("Start serve %s:%s" % (HOST, PORT))
-    info("tcp_handler: %s" % tcp_handler)
-    info("remote_browser: %s" % remote_browser)
+    info("Tcp_handler: %s" % tcp_handler)
+    info("Remote_browser: %s" % remote_browser)
     
     server = ThreadedTCPServer((HOST, PORT), tcp_handler)
-
+    info("ThreadedTCPServer: %s" % server)
 
     max_socket_children = 0
 

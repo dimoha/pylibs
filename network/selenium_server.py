@@ -811,7 +811,11 @@ def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = Non
     info("Tcp_handler: %s" % tcp_handler)
     info("Remote_browser: %s" % remote_browser)
     
-    server = ThreadedTCPServer((HOST, PORT), tcp_handler)
+    try:
+        server = ThreadedTCPServer((HOST, PORT), tcp_handler)
+    except Exception as e:
+        error("%s" % e)
+        raise
     info("ThreadedTCPServer: %s" % server)
 
     max_socket_children = 0

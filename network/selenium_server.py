@@ -148,9 +148,6 @@ class PersistentWebdriver(webdriver.Remote):
 
 
 class ThreadedTCPServer(SocketServer.ForkingMixIn, SocketServer.TCPServer): #ThreadingMixIn
-    def __init__(self, *args, **kwargs):
-        self.allow_reuse_address = True
-        SocketServer.TCPServer.__init__(self, *args, **kwargs)
 
     def serve_forever(self, address, *args, **kwargs):
         self.address = address
@@ -818,7 +815,9 @@ def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = Non
     try:
         server = ThreadedTCPServer((HOST, PORT), tcp_handler)
     except Exception as e:
-        error("%s" % e)
+        etype, evalue, etrace = sys.exc_info()
+        trace = "".join(traceback.format_exception(etype, evalue, etrace))
+        error("%s: %s" % (e, trace))
         raise
     info("ThreadedTCPServer: %s" % server)
 

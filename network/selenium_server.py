@@ -819,11 +819,13 @@ def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = Non
     pool = BrowserPool(pool_name)
 
     try:
+        info("Start connect to DB")
         db = get_sql_session(DATABASE)
 
         num = 0
 
         cnt_servers = len(SELENIUM_SERVERS)
+        info("Servers count: %s" % cnt_servers)
 
         sessions_by_servers = {}
 

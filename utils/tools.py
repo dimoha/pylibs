@@ -91,5 +91,10 @@ def rus_date_to_datetime(dt_str):
     if len(dt_str_list) != 3:
         raise ValueError("Bad format of date: %s" % dt_str)
     month_name = dt_str_list[1].strip()
-    monthes = {u"января":'01', u"февраля":'02', u"марта":'03', u"апреля":'04', u"мая":'05', u"июня":'06', u"июля":'07', u"августа":'08', u"сентября":'09', u"октября":'10', u"ноября":'11', u"декабря":'12'}
-    return datetime.strptime(dt_str.replace(month_name, monthes[month_name]), "%d %m %Y").date()
+    monthes = {u"января":'01', u"февраля":'02', u"марта":'03', u"апреля":'04', u"мая":'05', u"июня":'06', u"июля":'07',
+               u"августа":'08', u"сентября":'09', u"октября":'10', u"ноября":'11', u"декабря":'12'}
+    try:
+        res =  datetime.strptime(dt_str.replace(month_name, monthes[month_name]), "%d %m %Y").date()
+    except Exception as e:
+        raise ValueError('Bad format of date "%s": %s' % (dt_str, e))
+    return res

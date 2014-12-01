@@ -86,7 +86,9 @@ def processecControl(name, numcopies, args = None, no_exit = False):
 def rus_date_to_datetime(dt_str):
     u"""Работает с форматом "1 января 2018"
     """
-    dt_str = toUnicode(dt_str).replace("\xa0", "").strip()
+    dt_str = toUnicode(dt_str)
+    dt_str = dt_str.replace("\xa0", "")
+    dt_str = dt_str.strip()
     dt_str_list = dt_str.strip().split(" ")
     if len(dt_str_list) != 3:
         raise ValueError("Bad format of date: %s" % dt_str)

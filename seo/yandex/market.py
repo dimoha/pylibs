@@ -7,6 +7,7 @@ from pylibs.utils.text import toUnicode
 from logging import info, debug, warning, error
 import re, json, urllib, math
 from datetime import datetime
+from pylibs.utils.tools import rus_date_to_datetime
 
 class YandexMarketException(YandexException):
     pass
@@ -333,6 +334,7 @@ class YandexMarketWeb(Yandex):
         debug("parsed: %s positions" % len(products))
         return products
 
+
     def parse_shop_reviews_page(self, shop_id, sort = None, limit = None):
         page_url = '%s/shop/%s/reviews' % (self.host, shop_id)
         if sort is not None:
@@ -362,9 +364,12 @@ class YandexMarketWeb(Yandex):
         start_date = at_xpath(self.html, u'//div[@class="b-shop-ratings__item" and contains(text(), "Магазин на Маркете с")]')
         finish_date = at_xpath(self.html, u'//div[@class="b-shop-ratings__item" and contains(text(), "Магазин не размещается с")]')
         if start_date is not None:
-            start_date = element_text(start_date).replace("Магазин на Маркете с", "").replace("года", "").strip()
+            start_date = element_text(start_date).replace("Магазин на Маркете с", "").replace("года", "")
+            start_date = rus_date_to_datetime(start_date)
         if finish_date is not None:
-            finish_date = element_text(finish_date).replace("Магазин не размещается с", "").replace("года", "").strip()
+            finish_date = element_text(finish_date).replace("Магазин не размещается с", "").replace("года", "")
+            finish_date = rus_date_to_datetime(finish_date)
+
         res['start_date'] = start_date
         res['finish_date'] = finish_date
 

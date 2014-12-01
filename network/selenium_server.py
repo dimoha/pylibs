@@ -148,6 +148,7 @@ class PersistentWebdriver(webdriver.Remote):
 
 
 class ThreadedTCPServer(SocketServer.ForkingMixIn, SocketServer.TCPServer): #ThreadingMixIn
+
     def serve_forever(self, address, *args, **kwargs):
         self.address = address
         return SocketServer.TCPServer.serve_forever(self, *args, **kwargs)
@@ -808,22 +809,30 @@ def start_service(SELENIUM_SERVERS, SELENIUM_SERVER, DATABASE, tcp_handler = Non
     PORT_2 = PORT + 1 if PORT_2 is None else PORT_2
     SocketServer.TCPServer.allow_reuse_address = True
     info("Start serve %s:%s" % (HOST, PORT))
-    info("tcp_handler: %s" % tcp_handler)
-    info("remote_browser: %s" % remote_browser)
+    info("Tcp_handler: %s" % tcp_handler)
+    info("Remote_browser: %s" % remote_browser)
     
-    server = ThreadedTCPServer((HOST, PORT), tcp_handler)
-
+    try:
+        server = ThreadedTCPServer((HOST, PORT), tcp_handler)
+    except Exception as e:
+        etype, evalue, etrace = sys.exc_info()
+        trace = "".join(traceback.format_exception(etype, evalue, etrace))
+        error("%s: %s" % (e, trace))
+        raise
+    info("ThreadedTCPServer: %s" % server)
 
     max_socket_children = 0
 
     pool = BrowserPool(pool_name)
 
     try:
+        info("Start connect to DB")
         db = get_sql_session(DATABASE)
 
         num = 0
 
         cnt_servers = len(SELENIUM_SERVERS)
+        info("Servers count: %s" % cnt_servers)
 
         sessions_by_servers = {}
 

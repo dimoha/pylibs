@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
 import os, time, sys
-from logging import info
+from logging import info, debug
 
 def kill_process(mask):
     c = 0
     tPid = str(os.getpid())
-    processes = os.popen( "ps aux | grep '"+str(mask)+"' | grep -v 'defunct' | grep -v grep | grep -v "+str(tPid)+"").read().strip()
+    command = "ps aux | grep '"+str(mask)+"' | grep -v 'defunct' | grep -v grep | grep -v "+str(tPid)+""
+    info("kill_process command: %s" % command)
+    processes = os.popen(command).read().strip()
+    info("kill_process processes: %s" % processes)
     for onestr in processes.split("\n"):
         try:
             thisStrPid = onestr.split()[1]
             if thisStrPid!=tPid:
                 if mask in onestr:
                     c += 1
-
                     os.popen("kill -9 "+str(thisStrPid))
         except Exception as e:
             pass
@@ -28,7 +30,10 @@ def processecControl(name, numcopies, args = None, no_exit = False):
     if args is not None:
         eArgs = []
         canCollect = False
-        processes = os.popen( "ps aux | grep '"+str(name)+"' | grep -v grep | grep -v 'bin/sh' | grep -v "+str(tPid)+"").read().strip()
+        command = "ps aux | grep '"+str(name)+"' | grep -v grep | grep -v 'bin/sh' | grep -v "+str(tPid)
+        info("processecControl command: %s" % command)
+        processes = os.popen(command).read().strip()
+        info("processecControl processes: %s" % processes)
         alist = processes.split(" ")
         for v in alist:
             v = v.strip()

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import os, time, sys
+import os, time, sys, re
 from logging import info, debug
 from datetime import datetime
 from pylibs.utils.text import toUnicode
@@ -87,7 +87,7 @@ def rus_date_to_datetime(dt_str):
     u"""Работает с форматом "1 января 2018"
     """
     dt_str = toUnicode(dt_str)
-    dt_str = dt_str.replace("\xa0", "")
+    dt_str = re.sub('[\s\xa0]+(?is)', ' ', dt_str).strip()
     dt_str = dt_str.strip()
     dt_str_list = dt_str.strip().split(" ")
     if len(dt_str_list) != 3:

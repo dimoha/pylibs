@@ -6,9 +6,9 @@ def kill_process(mask):
     c = 0
     tPid = str(os.getpid())
     command = "ps aux | grep '"+str(mask)+"' | grep -v 'defunct' | grep -v grep | grep -v "+str(tPid)+""
-    info("kill_process command: %s" % command)
+    debug("kill_process command: %s" % command)
     processes = os.popen(command).read().strip()
-    info("kill_process processes: %s" % processes)
+    debug("kill_process processes: %s" % processes)
     for onestr in processes.split("\n"):
         try:
             thisStrPid = onestr.split()[1]
@@ -31,9 +31,9 @@ def processecControl(name, numcopies, args = None, no_exit = False):
         eArgs = []
         canCollect = False
         command = "ps aux | grep '"+str(name)+"' | grep -v grep | grep -v 'bin/sh' | grep -v "+str(tPid)
-        info("processecControl command: %s" % command)
+        debug("processecControl command: %s" % command)
         processes = os.popen(command).read().strip()
-        info("processecControl processes: %s" % processes)
+        debug("processecControl processes: %s" % processes)
         alist = processes.split(" ")
         for v in alist:
             v = v.strip()

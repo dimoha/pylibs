@@ -7,6 +7,7 @@ from pylibs.utils.text import toUnicode
 from logging import info, debug, warning, error
 import re, json, urllib, math
 from datetime import datetime
+from pylibs.utils.tools import rus_date_to_datetime
 
 class YandexMarketException(YandexException):
     pass
@@ -333,12 +334,15 @@ class YandexMarketWeb(Yandex):
         debug("parsed: %s positions" % len(products))
         return products
 
+
     def parse_shop_reviews_page(self, shop_id, sort = None, limit = None):
         page_url = '%s/shop/%s/reviews' % (self.host, shop_id)
         if sort is not None:
             page_url = page_url + '?sort_by=%s' % sort
         debug(page_url)
 
+        # <div class="b-shop-ratings__item">Магазин не размещается с 10 сентября 2009&nbsp;года</div>
+        # <div class="b-shop-ratings__item">Магазин на Маркете с 27 сентября 2001&nbsp;года</div>
 
         res = {}
         res['reviews_1_stars_cnt'] = 0
@@ -349,13 +353,25 @@ class YandexMarketWeb(Yandex):
         res['reviews_cnt'] = 0
         res['stars_cnt'] = 0
         res['reviews'] = self.__parse_reviews_from_page(page_url, limit)
+
         shop_name = at_xpath(self.html, '//span[@itemprop="name"]')
         if shop_name is None:
             raise YandexMarket404Exception
-
         res['shop_name'] = element_text(shop_name).strip()
         if res['shop_name'] == "":
             raise YandexMarket404Exception
+
+        start_date = at_xpath(self.html, u'//div[@class="b-shop-ratings__item" and contains(text(), "Магазин на Маркете с")]')
+        finish_date = at_xpath(self.html, u'//div[@class="b-shop-ratings__item" and contains(text(), "Магазин не размещается с")]')
+        if start_date is not None:
+            start_date = element_text(start_date).replace("Магазин на Маркете с", "").replace("года", "")
+            start_date = rus_date_to_datetime(start_date)
+        if finish_date is not None:
+            finish_date = element_text(finish_date).replace("Магазин не размещается с", "").replace("года", "")
+            finish_date = rus_date_to_datetime(finish_date)
+
+        res['start_date'] = start_date
+        res['finish_date'] = finish_date
 
         #<span xmlns:mx="https://market.yandex.ru/xmlns" class="b-aura-rating b-aura-rating_state_5 b-aura-rating_size_m"
         # title="на основе 2560 оценок покупателей и данных службы качества Маркета"

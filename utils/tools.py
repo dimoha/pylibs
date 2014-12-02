@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-import os, time, sys
+import os, time, sys, re
 from logging import info, debug
+from datetime import datetime
+from pylibs.utils.text import toUnicode
 
 def kill_process(mask):
     c = 0
@@ -78,3 +80,23 @@ def processecControl(name, numcopies, args = None, no_exit = False):
             sys.exit(1)
 
     return cntProcesses
+
+
+
+def rus_date_to_datetime(dt_str):
+    u"""Работает с форматом "1 января 2018"
+    """
+    dt_str = toUnicode(dt_str)
+    dt_str = re.sub('[\s\xa0]+(?is)', ' ', dt_str).strip()
+    dt_str = dt_str.strip()
+    dt_str_list = dt_str.strip().split(" ")
+    if len(dt_str_list) != 3:
+        raise ValueError("Bad format of date: %s" % dt_str)
+    month_name = dt_str_list[1].strip()
+    monthes = {u"января":'01', u"февраля":'02', u"марта":'03', u"апреля":'04', u"мая":'05', u"июня":'06', u"июля":'07',
+               u"августа":'08', u"сентября":'09', u"октября":'10', u"ноября":'11', u"декабря":'12'}
+    try:
+        res =  datetime.strptime(dt_str.replace(month_name, monthes[month_name]), "%d %m %Y").date()
+    except Exception as e:
+        raise ValueError('Bad format of date "%s": %s' % (dt_str, e))
+    return res

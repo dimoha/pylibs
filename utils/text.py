@@ -156,14 +156,6 @@ class SemanticNoContentException(UtilsTexts):
 
 class SemanticAnalyze(object):
 
-    parts_of_page = {
-        'title': {'text': '', 'weight': 10},
-        'keywords': {'text': '', 'weight': 6},
-        'description': {'text': '', 'weight': 6},
-        'h1-h6': {'text': '', 'weight': 2},
-        'other': {'text': '', 'weight': 1},
-    }
-
     block_elements = ['TITLE', 'ADDRESS', 'BLOCKQUOTE', 'CENTER', 'DIR', 'DIV', 'DL', 'FIELDSET', 'FORM', 'H1', 'H2',
                       'H3', 'H4', 'H5', 'H6', 'ISINDEX', 'MENU', 'NOFRAMES', 'NOSCRIPT', 'OL', 'P', 'PRE', 'TABLE',
                       'UL', 'DD', 'DT', 'FRAMESET', 'LI', 'TBODY', 'TD', 'TFOOT', 'TH', 'THEAD', 'TR', 'APPLET',
@@ -180,6 +172,15 @@ class SemanticAnalyze(object):
         self.reg = "(<"+"[\s\t>]|<".join(self.block_elements)+"[\s\t>])(?isu)"
         self.result_words = []
         self.result_init_words = []
+
+        self.parts_of_page = {
+            'title': {'text': '', 'weight': 10},
+            'keywords': {'text': '', 'weight': 6},
+            'description': {'text': '', 'weight': 6},
+            'h1-h6': {'text': '', 'weight': 2},
+            'other': {'text': '', 'weight': 1},
+        }
+
 
     def __get_title(self):
         m = re.search('<title[^>]*>(.*?)</title>(?isu)', self.html)
@@ -246,6 +247,9 @@ class SemanticAnalyze(object):
     def __create_combinations(self):
         for tag in self.parts_of_page:
 
+            if self.parts_of_page[tag]['text'] == "":
+                continue
+
             if not self.only_normalized_text:
                 self.parts_of_page[tag]['text'] = re.sub(u'\s[а-яА-ЯёЁa-zA-Z0-9]{1,2}[\s\.](?uis)', ' ',
                                                          ' %s ' % self.parts_of_page[tag]['text']).strip()
@@ -273,23 +277,23 @@ class SemanticAnalyze(object):
 
                     if len(one) > 0:
                         for k, word in enumerate(one):
-                            if word not in self.singles: 
-                                self.singles[word] = 0
-                            self.singles[word] += self.parts_of_page[tag]['weight']
+                            self.singles.setdefault(word, [word, 0])
+                            self.singles[word][1] += self.parts_of_page[tag]['weight']
                             sub_one = one[k::1]
                             for word2 in sub_one:
                                 if word2 != word:
                                     key = word.strip()+' '+word2.strip()
-                                    if key not in self.combinations: 
-                                        self.combinations[key] = 0
-    
-                                    self.combinations[key] += self.parts_of_page[tag]['weight']
+                                    self.combinations.setdefault(key, [key, 0])
+                                    self.combinations[key][1] += self.parts_of_page[tag]['weight']
 
             self.parts_of_page[tag]['text'] = '. '.join(self.parts_of_page[tag]['text'])
 
+
     def __get_semantic_of_page(self):
-        ss = sorted(self.singles, key=self.singles.get, reverse=True)
-        sc = sorted(self.combinations, key=self.combinations.get, reverse=True)
+        ss = filter(lambda x: x[1] > 1, self.singles.values())
+        sc = filter(lambda x: x[1] > 1, self.combinations.values())
+        ss = sorted(ss, key=lambda x: x[1], reverse=True)
+        sc = sorted(sc, key=lambda x: x[1], reverse=True)
         ss = ss[0:6]
         sc = sc[0:self.total_limit*1]
 
@@ -308,7 +312,7 @@ class SemanticAnalyze(object):
         for k, com in enumerate(sc):
             nf = []
             wtype = ''
-            for kk, ow in enumerate(com.split(' ')):
+            for kk, ow in enumerate(com[0].split(' ')):
                 word = ow.strip().upper()
                 if word != "":
                     info = m.get_graminfo(word, True)
@@ -325,7 +329,7 @@ class SemanticAnalyze(object):
             if wtype in can_forms:
                 nf = ' '.join(nf)
                 if nf.strip() != '' and nf not in self.result_words:
-                    self.result_init_words.append(com.strip())
+                    self.result_init_words.append(com[0].strip())
                     self.result_words.append(nf.strip())
 
     def get_semcore(self):

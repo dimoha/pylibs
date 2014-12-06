@@ -133,7 +133,7 @@ class PersistentWebdriver(webdriver.Remote):
             page_source = self.page_source
             info("CONNECTED TO EXISTS")
         except WebDriverException as e:
-            info("Existed session not found.. create new session")
+            info("Existed session not found.. create new session (reason: %s)" % e)
             self.existed_session_id = None
             return self.start_session(*args, **kwargs)
         except Exception as e:

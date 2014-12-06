@@ -256,6 +256,8 @@ class YandexMarketWeb(Yandex):
                     product_link = at_css(position, 'a.b-offers__name')
                     product_name = toUnicode(element_text(product_link))
                     shop_link = product_link.attrib['href']
+                    if shop_link.startswith("//"):
+                        shop_link = 'http:%s' % shop_link
                     model_id = int(search_json[n*(1+glen) + glen])
                     price = element_text(at_xpath(position, './/span[@class="b-old-prices__num"]'))
                     price = float(re.sub("[^\d\.]+(?is)", "", price.replace(",", ".")))

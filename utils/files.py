@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-import hashlib, gzip, os
+import hashlib, gzip, os, time
+from logging import info
 
 def md5sum(filename, blocksize=65536):
     hash = hashlib.md5()
@@ -37,5 +38,18 @@ def to_gzip(from_file, to_file = None, need_remove = True, compresslevel = 5):
     if need_remove:
         os.remove(from_file)
     return to_file
-        
-   
+
+
+def clean_dir(dir_path, life_days=None):
+    if os.path.isdir(dir_path):
+        files = os.listdir(dir_path)
+        for f in files:
+            if not f.startswith('.'):
+                current_path = os.path.join(dir_path, f)
+                if os.path.isfile(current_path):
+                    days = (int(time.time()) - int(os.path.getmtime(current_path)))/(3600*24)
+                    if days >= life_days:
+                        info("Remove %s (%s days > %s days)" % (current_path, days, life_days))
+                        os.remove(current_path)
+                elif os.path.isdir(current_path):
+                  clean_dir(current_path, life_days)

@@ -74,7 +74,7 @@ class MultiThreadsTasksManager(object):
 
         #while not self.queue.empty():
         #    time.sleep(1)
-        #self.queue.join()
+        self.queue.join()
             
         cnt_errors = 0
         cnt_total = 0

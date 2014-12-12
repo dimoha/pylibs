@@ -45,7 +45,7 @@ class MultiThreadsTasksManager(object):
                     self.queue.task_done()
                     
                 except Queue.Empty:
-                    time.sleep(1)
+                    break
                 except Exception as e:
                     error('%s error: %s' % (self.name, e))
             debug('%s finished' % self.name)

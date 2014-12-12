@@ -2,6 +2,7 @@
 from pylibs.network import NetworkException
 from pylibs.network.parser import *
 from pylibs.network.urls import *
+from pylibs.utils.text import strip_tags
 import pycurl, re, os, cookielib, time, urllib,  json
 from cStringIO import StringIO
 from urllib2 import Request

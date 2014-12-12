@@ -42,7 +42,7 @@ class MultiThreadsTasksManager(object):
                         task.error = e
                         error('%s error: %s' % (self.name, e))
                         
-                    #self.queue.task_done()
+                    self.queue.task_done()
                 except Queue.Empty:
                     time.sleep(1)
                 except Exception as e:
@@ -72,8 +72,8 @@ class MultiThreadsTasksManager(object):
         for task in tasks:
             self.queue.put(task)
 
-        while not self.queue.empty():
-            time.sleep(1)
+        #while not self.queue.empty():
+        #    time.sleep(1)
         #self.queue.join()
             
         cnt_errors = 0

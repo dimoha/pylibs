@@ -15,12 +15,12 @@ def funzip(from_file, to_file = None, need_remove = True):
             to_file = from_file[:-3]
         
     with open(to_file, "w") as destination_file:
-        with gzip.GzipFile(from_file) as f:
-            while True:
-                content = f.read(8096)
-                if content == '':
-                    break
-                destination_file.write(content)
+        f = gzip.GzipFile(from_file)
+        while True:
+            content = f.read(8096)
+            if content == '':
+                break
+            destination_file.write(content)
     if need_remove:
         os.remove(from_file)
         

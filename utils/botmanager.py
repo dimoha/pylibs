@@ -2,10 +2,12 @@
 import time, threading
 import Queue
 from pylibs.utils import UtilsException
-from logging import info, debug, warning, error
+from logging import info, debug, warning, error, critical
+
 
 class MultiThreadsTasksManagerException(UtilsException):
     pass
+
 
 class MultiThreadsTasksManager(object):
     
@@ -29,6 +31,9 @@ class MultiThreadsTasksManager(object):
             self.id = threadID
             self._stop = threading.Event()
 
+        def __task_done(self):
+            self.check_queue.put(True)
+
         def run(self):
             debug('%s started' % self.name)
             while True:
@@ -43,13 +48,12 @@ class MultiThreadsTasksManager(object):
                         task.error = e
                         error('%s error: %s' % (self.name, e))
                     finally:
-                        self.check_queue.put(True)
-                        
-                    self.queue.task_done()
+                        self.queue.task_done()
+                        self.__task_done()
                 except Queue.Empty:
                     time.sleep(1)
                 except Exception as e:
-                    error('%s error: %s' % (self.name, e))
+                    critical('%s error: %s' % (self.name, e))
             debug('%s finished' % self.name)
 
         def stop(self):
@@ -60,6 +64,7 @@ class MultiThreadsTasksManager(object):
         self.num_threads = num_threads
         self.threads = []
         self.check_queue = Queue.Queue()
+        self.__queue_size = 0
 
     def start(self):
         debug('Spider started.')
@@ -68,20 +73,23 @@ class MultiThreadsTasksManager(object):
             thread.start()
             self.threads.append(thread)
 
-    def execute(self, tasks_data, ignore_errors = False):
+    def __tasks_join(self):
+        while self.check_queue.qsize() < self.__queue_size:
+            time.sleep(1)
+        info("ALL TASKS FINISHED! It detected by self.__tasks_join().")
+
+    def execute(self, tasks_data, ignore_errors=False):
         
         tasks = map(lambda x: self.__class__.Task(x), tasks_data)
             
         for task in tasks:
             self.queue.put(task)
 
-        while self.check_queue.qsize() < len(tasks):
-            time.sleep(1)
+        self.__queue_size = len(tasks)
 
-        info("ALL TASKS FINISHED! It detected by itself method.")
-
+        self.__tasks_join()
         self.queue.join()
-            
+
         cnt_errors = 0
         cnt_total = 0
         

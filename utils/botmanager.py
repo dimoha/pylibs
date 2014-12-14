@@ -21,10 +21,11 @@ class MultiThreadsTasksManager(object):
     
             
     class WorkerThread(threading.Thread):
-        def __init__(self, queue, threadID):
+        def __init__(self, queue, threadID, check_queue):
             threading.Thread.__init__(self)
             self.name = 'WorkerThread %s' % threadID
             self.queue = queue
+            self.check_queue = check_queue
             self.id = threadID
             self._stop = threading.Event()
 
@@ -63,7 +64,7 @@ class MultiThreadsTasksManager(object):
     def start(self):
         debug('Spider started.')
         for i in range(self.num_threads):
-            thread = MultiThreadsTasksManager.WorkerThread(self.queue, i)
+            thread = MultiThreadsTasksManager.WorkerThread(self.queue, i, self.check_queue)
             thread.start()
             self.threads.append(thread)
 

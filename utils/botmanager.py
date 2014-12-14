@@ -41,6 +41,8 @@ class MultiThreadsTasksManager(object):
                     except Exception as e:
                         task.error = e
                         error('%s error: %s' % (self.name, e))
+                    finally:
+                        self.check_queue.put(True)
                         
                     self.queue.task_done()
                 except Queue.Empty:
@@ -56,7 +58,7 @@ class MultiThreadsTasksManager(object):
         self.queue = Queue.Queue()
         self.num_threads = num_threads
         self.threads = []
-
+        self.check_queue = Queue.Queue()
 
     def start(self):
         debug('Spider started.')
@@ -72,9 +74,12 @@ class MultiThreadsTasksManager(object):
         for task in tasks:
             self.queue.put(task)
 
-        #while not self.queue.empty():
-        #    time.sleep(1)
-        #self.queue.join()
+        while self.check_queue.qsize() < len(tasks):
+            time.sleep(1)
+
+        info("ALL TASKS FINISHED! It detected by itself method.")
+
+        self.queue.join()
             
         cnt_errors = 0
         cnt_total = 0

@@ -2,6 +2,7 @@
 import re,  time, urllib, urlparse
 from pylibs.network import NetworkException
 
+
 class UrlsException(NetworkException):
     pass
 

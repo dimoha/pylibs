@@ -193,7 +193,7 @@ class SemanticAnalyze(object):
             if m:
                 m2 = re.search('content\s*=\s*"([^"]+)"(?isu)', m.group(1))
                 if m2:
-                    self.parts_of_page[tag]['text'] = m2.group(1).strip()
+                    self.parts_of_page[tag]['text'] = m2.group(1).strip()[0:10000]
 
     def __get_h1h6(self):
         m = re.findall('<h[1-6][^>]*>(.*?)</h[1-6]>(?isu)', self.html)
@@ -216,7 +216,6 @@ class SemanticAnalyze(object):
                                                                         self.parts_of_page['other']['text'])
         self.parts_of_page['other']['text'] = self.parts_of_page['other']['text'].replace('#?', '#')
 
-
     def __prepare_parts_of_pages(self):
 
         for tag in self.parts_of_page:
@@ -225,7 +224,6 @@ class SemanticAnalyze(object):
             if not self.only_normalized_text:
                 self.parts_of_page[tag]['text'] = re.sub('[^\s]*[0-9]+[^\s]+(?i)', ' ', self.parts_of_page[tag]['text'])
                 self.parts_of_page[tag]['text'] = re.sub('[^\s]+[0-9]+[^\s]*(?i)', ' ', self.parts_of_page[tag]['text'])
-
 
             self.parts_of_page[tag]['text'] = re.sub('[^#\w\d'+self.sentences_delimiters+']+(?isu)', ' ',
                                                                         self.parts_of_page[tag]['text'])

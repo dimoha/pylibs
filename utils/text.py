@@ -181,11 +181,10 @@ class SemanticAnalyze(object):
             'other': {'text': '', 'weight': 1},
         }
 
-
     def __get_title(self):
         m = re.search('<title[^>]*>(.*?)</title>(?isu)', self.html)
         if m:
-            self.parts_of_page['title']['text'] = m.group(1).strip()
+            self.parts_of_page['title']['text'] = m.group(1).strip()[0:1000]
 
     def __get_kwd_and_desc(self):
         for tag in ['description', 'keywords']:
@@ -200,6 +199,7 @@ class SemanticAnalyze(object):
         if m:
             for v in m:
                 self.parts_of_page['h1-h6']['text'] += '. '+v.strip()
+        self.parts_of_page['h1-h6']['text'] = self.parts_of_page['h1-h6']['text'][0:10000]
 
     def __get_other_txt(self):
         # remove title
@@ -215,6 +215,7 @@ class SemanticAnalyze(object):
         self.parts_of_page['other']['text'] = re.sub('<hr>|<hr/>|<hr />(?is)', ' # ',
                                                                         self.parts_of_page['other']['text'])
         self.parts_of_page['other']['text'] = self.parts_of_page['other']['text'].replace('#?', '#')
+        self.parts_of_page['other']['text'] = self.parts_of_page['other']['text'][0:50000]
 
     def __prepare_parts_of_pages(self):
 

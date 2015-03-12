@@ -40,7 +40,11 @@ def to_gzip(from_file, to_file = None, need_remove = True, compresslevel = 5):
     return to_file
 
 
-def clean_dir(dir_path, life_days=None):
+def clean_dir(dir_path, life_days=None, exclude_dir_names=None):
+
+    if exclude_dir_names is None:
+        exclude_dir_names = []
+
     if os.path.isdir(dir_path):
         files = os.listdir(dir_path)
         for f in files:
@@ -52,4 +56,7 @@ def clean_dir(dir_path, life_days=None):
                         info("Remove %s (%s days > %s days)" % (current_path, days, life_days))
                         os.remove(current_path)
                 elif os.path.isdir(current_path):
-                  clean_dir(current_path, life_days)
+                    if f not in exclude_dir_names:
+                        clean_dir(current_path, life_days)
+                    else:
+                        info('Do not clean dir "%s" from exclude_dir_list' % f)

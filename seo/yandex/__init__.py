@@ -4,6 +4,8 @@ from pylibs.network.parser import *
 from logging import info, warning, debug
 from pylibs.network.browser import Browser
 from pylibs.network.anticaptcha import solveImgUrl
+import time
+
 
 class YandexException(SeoException):
     pass
@@ -122,7 +124,7 @@ def yandex_authorization(br):
 
 
             debug("START POST")
-            br.postForm(auth_form,{'timestamp':time.time()})
+            br.postForm(auth_form,{'timestamp': time.time()})
             debug("END POST")
 
             auth_form_again = at_xpath(br.html(),'//form[contains(@action,"passport")]')

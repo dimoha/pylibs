@@ -34,8 +34,7 @@ class VoxImplantAPI(object):
             urllib.urlencode(data)
         )
         logging.info("Request to {0}".format(request_url))
-        #r = requests.get(request_url)
-        r = None
+        r = requests.get(request_url)
         logging.info("response: {0}".format(r.text))
 
         if r.status_code != 200:
@@ -54,7 +53,7 @@ class VoxImplantAPI(object):
     def make_call(self, phone_from, phone_to, rule_id):
         data = {
             'rule_id': rule_id,
-            'script_custom_data': ":".join(phone_from, phone_to),
+            'script_custom_data': ":".join([phone_from, phone_to]),
         }
         response = self.__request('StartScenarios', data)
         return response

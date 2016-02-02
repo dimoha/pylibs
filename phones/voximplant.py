@@ -70,7 +70,7 @@ class VoxImplantAPI(object):
         return self.__request(request_url=url)
 
     def get_history(self, date_from, date_to, custom_data):
-        frmt = "%Y-%m-%d %H:%M:%s"
+        frmt = "%Y-%m-%d %H:%M:%S"
         data = {
             'from_date': date_from.strftime(frmt),
             'to_date': date_to.strftime(frmt),
@@ -78,4 +78,4 @@ class VoxImplantAPI(object):
             'call_session_history_custom_data': custom_data
         }
         response = self.__request('GetCallHistory', data)
-        return response['result']
+        return response

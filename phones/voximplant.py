@@ -51,10 +51,13 @@ class VoxImplantAPI(object):
 
         return response
 
-    def make_call(self, phone_from, phone_to, rule_id):
+    def make_call(self, phone_from, phone_to, rule_id, call_id=None):
+        params = [phone_from, phone_to]
+        if call_id is not None:
+            params.append(call_id)
         data = {
             'rule_id': rule_id,
-            'script_custom_data': ":".join([phone_from, phone_to]),
+            'script_custom_data': ":".join(map(str, params)),
         }
         response = self.__request('StartScenarios', data)
 

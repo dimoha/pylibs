@@ -110,7 +110,7 @@ class SendPulseAPI(object):
                 "html": body,
                 "text": re.sub('<[^<]+?>', '', body),
                 "subject": subject,
-                "encoding": "utf8",
+                "encoding": "UTF-8",
                 "from": sender,
                 "to": recipients,
             }

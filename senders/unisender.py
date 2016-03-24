@@ -65,6 +65,9 @@ class UniSenderAPI(object):
 
         return response
 
+    def check_sms(self, sms_id):
+        return self.__request('checkSms', {'sms_id': sms_id})
+
     def send_mail(self, subject, body, emails_to, sender_email, sender_name, list_id):
 
         data = {

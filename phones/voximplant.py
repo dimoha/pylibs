@@ -26,17 +26,21 @@ class VoxImplantAPI(object):
         self.api_key = api_key
 
     def __request(self, method=None, data=None, request_url=None):
+        post = None
         if request_url is None:
-            request_url = '{0}{1}/?account_id={2}&api_key={3}&{4}'.format(
-                self.api_url,
-                method,
-                self.account_id,
-                self.api_key,
-                urllib.urlencode(data)
-            )
-        logging.info("Request to {0}".format(request_url))
-        r = requests.get(request_url)
-        logging.info("response: {0}".format(r.text))
+            post = data
+            post['account_id'] = self.account_id
+            post['api_key'] = self.api_key
+            request_url = '{0}{1}'.format(self.api_url, method)
+
+        if post is None:
+            logging.info("Request to {0}".format(request_url))
+            r = requests.get(request_url)
+            logging.info("response: {0}".format(r.text))
+        else:
+            logging.info("Request POST to {0}: {1}".format(request_url, post))
+            r = requests.post(request_url, data=post)
+            logging.info("response: {0}".format(r.text))
 
         if r.status_code != 200:
             raise VoxImplantApiBadHttpException(r.status_code)
@@ -51,18 +55,18 @@ class VoxImplantAPI(object):
 
         return response
 
-    def make_call(self, phone_from, phone_to, rule_id, call_id=None):
-        params = [phone_from, phone_to]
-        if call_id is not None:
-            params.append(call_id)
+    def make_call(self, rule_id, custom_data=None):
+
         data = {
             'rule_id': rule_id,
-            'script_custom_data': ":".join(map(str, params)),
+            'script_custom_data': custom_data,
         }
         response = self.__request('StartScenarios', data)
 
         if response['result'] != 1:
             raise VoxImplantApiException(response)
+
+        response['custom_data'] = custom_data
 
         return response
 

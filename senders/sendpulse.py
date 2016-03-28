@@ -24,6 +24,10 @@ class SendPulseApiBadHttpException(SendPulseApiException):
     pass
 
 
+class SendPulseApiBannedException(SendPulseApiException):
+    pass
+
+
 class SendPulseAPI(object):
     api_url = 'https://login.sendpulse.com/api/smtp/1.0/'
 
@@ -90,7 +94,11 @@ class SendPulseAPI(object):
 
         if 'error' in response and response['error'] != 0:
             error_data = ": {0}".format(response['data']) if 'data' in response else ''
-            raise SendPulseApiException("ErrorCode {0}, {1}{2}".format(response['error'], response['text'], error_data))
+            err_msg = "ErrorCode {0}, {1}{2}".format(response['error'], response['text'], error_data)
+            if response['error'] == 98:
+                raise SendPulseApiBannedException(err_msg)
+            else:
+                raise SendPulseApiException(err_msg)
 
         return response['data']
 

@@ -1,14 +1,9 @@
 # -*- coding: utf-8 -*-
 from pylibs.senders import SendersException
-import urllib
 import requests
 import json
 import logging
 import re
-from M2Crypto import RSA, BIO
-from M2Crypto.EVP import Cipher
-import hashlib
-import time
 
 
 class MailGunException(SendersException):
@@ -65,7 +60,8 @@ class MailGunApi(object):
             "from": mg_sender,
             "to": mg_recipients,
             "subject": subject,
-            "text": body
+            "text": re.sub('<[^<]+?>', '', body),
+            "html": body
         }
 
         response = self.__request('messages', data)

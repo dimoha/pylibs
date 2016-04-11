@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import re, os, sys
 from pylibs.utils import UtilsException
-from pymorphy import get_morph
 
 
 class UtilsTexts(UtilsException):
@@ -144,6 +143,7 @@ def normalize_string_simple(s):
 
 
 def get_pymorphy_handler():
+    from pymorphy import get_morph
     if 'pymorphy_link' not in globals():
         dicts_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'dicts', 'ru')
         globals()['pymorphy_link'] = get_morph(dicts_path, 'cdb')

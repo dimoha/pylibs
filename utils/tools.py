@@ -3,6 +3,8 @@ import os, time, sys, re
 from logging import info, debug
 from datetime import datetime
 from pylibs.utils.text import toUnicode
+import base64
+
 
 def kill_process(mask):
     c = 0
@@ -100,3 +102,31 @@ def rus_date_to_datetime(dt_str):
     except Exception as e:
         raise ValueError('Bad format of date "%s": %s' % (dt_str, e))
     return res
+
+
+def dencrypt(s, key):
+    result = ''
+    s = base64.b64encode(s)
+    len_s = len(s)
+    len_key = len(key)
+    j = 0
+    for i in range(len_s):
+        result += chr(ord(s[i])+ord(key[j]))
+        j += 1
+        if j>len_key-1:
+            j = 0
+    return base64.b64encode(result)
+
+
+def ddecrypt(s, key):
+    result = ''
+    s = base64.b64decode(s)
+    len_s = len(s)
+    len_key = len(key)
+    j = 0
+    for i in range(len_s):
+        result += chr(ord(s[i])-ord(key[j]))
+        j += 1
+        if j>len_key-1:
+            j = 0
+    return base64.b64decode(result)

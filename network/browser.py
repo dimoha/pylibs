@@ -278,7 +278,10 @@ class Browser():
 
         if self.user_pwd is not None:
             curl.setopt(pycurl.USERPWD, self.user_pwd)
-        
+
+        curl.setopt(pycurl.SSL_VERIFYPEER, 0)
+        curl.setopt(pycurl.SSL_VERIFYHOST, 0)
+
         self.curl = curl
 
     def curlException(self,e):

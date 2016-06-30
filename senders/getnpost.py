@@ -34,7 +34,7 @@ class GetNPost(object):
         params.update(data or {})
         logging.info(u"Request to {0} {1}".format(request_url, params))
         r = requests.get(request_url, params=params)
-        logging.info(u"response: {0}".format(r.text))
+        logging.debug(u"response: {0}".format(r.text))
 
         if r.status_code != 200:
             raise GetNPostApiBadHttpException(r.status_code)

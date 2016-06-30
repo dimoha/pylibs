@@ -18,7 +18,7 @@ class GetNPostApiBadHttpException(GetNPostApiException):
 
 
 class GetNPost(object):
-    api_url = 'hhttp://api.get-n-post.ru/api/'
+    api_url = 'http://api.get-n-post.ru/api/'
 
     def __init__(self, api_key, id):
         self.api_key = api_key

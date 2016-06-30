@@ -40,7 +40,8 @@ class GetNPost(object):
             raise GetNPostApiBadHttpException(r.status_code)
 
         try:
-            response = self.xml_parser.feed(r.text)
+            self.xml_parser.feed(r.text)
+            response = self.xml_parser.close()
         except ValueError:
             raise GetNPostApiException("bad response: {0}".format(r.text))
 

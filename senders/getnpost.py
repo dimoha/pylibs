@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 from pylibs.senders import SendersException
 from lxml import etree
-import urllib
 import requests
-import json
 import logging
 
 

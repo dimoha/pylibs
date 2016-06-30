@@ -33,7 +33,6 @@ class GetNPost(object):
         }
         params.update(data or {})
         logging.info(u"Request to {0} {1}".format(request_url, params))
-        print request_url, params
         r = requests.get(request_url, params=params)
         logging.info(u"response: {0}".format(r.text))
 
@@ -41,7 +40,6 @@ class GetNPost(object):
             raise GetNPostApiBadHttpException(r.status_code)
 
         try:
-            print r.text
             self.xml_parser.feed(r.text)
             response = self.xml_parser.close()
         except ValueError:
@@ -56,5 +54,4 @@ class GetNPost(object):
         status = response.find('status').text
         if status not in ['ok', 'fail']:
             raise GetNPostApiException("Bad check_email status: {0}".format(status))
-        print status
         return status == 'ok'

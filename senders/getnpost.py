@@ -31,7 +31,7 @@ class GetNPost(object):
         params = {
             'key': self.api_key
         }
-        params = params.update(data or {})
+        params.update(data or {})
         logging.info(u"Request to {0} {1}".format(request_url, params))
         print request_url, params
         r = requests.get(request_url, params=params)

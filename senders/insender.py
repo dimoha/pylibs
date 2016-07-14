@@ -78,13 +78,9 @@ class InSenderApi(object):
         #else:
         #mg_sender = sender['email'].split("@")[0]
 
-        #if 'name' in recipient:
-        #    mg_recipient = u"{0} <{1}>".format(recipient['name'], recipient['email'])
-        #else:
-        mg_recipient = recipient['email']
-
         data = {
-            "email": mg_recipient,
+            "email": recipient['email'],
+            "subscriber_title": recipient['name'],
             "subject": subject,
             "body_html": body,
             "category": category

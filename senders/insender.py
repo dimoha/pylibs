@@ -8,6 +8,7 @@ import time
 import hashlib
 import urllib
 from decimal import Decimal
+from django.utils.datastructures import SortedDict
 
 
 class InSenderException(SendersException):
@@ -41,14 +42,13 @@ class InSenderApi(object):
         unix_now = int(time.time())
 
         if params is None:
-            params = {}
+            params = SortedDict()
 
         params['time'] = unix_now
         params['token'] = self.token
         signature = urllib.urlencode(params)
-        signature = "{0}@{1}".format(self.secret_key, signature)
+        signature = u"{0}@{1}".format(self.secret_key, signature)
         params['signature'] = hashlib.md5(signature).hexdigest()
-        print "{0}  -  {1}".format(request_url, params)
         r = requests.post(request_url, data=params)
 
         try:
@@ -68,8 +68,24 @@ class InSenderApi(object):
 
         return response
 
-    def get_events(self, event_types, from_ut=None):
-        raise NotImplementedError
+    def get_events(self, from_ut=None, category=None):
+
+        year_ago = Decimal(str(time.time() - 86400*365))
+
+        if from_ut is not None:
+            from_ut = Decimal(str(from_ut))
+
+        if from_ut is None or from_ut < year_ago:
+            from_ut = year_ago
+
+        params = SortedDict()
+        params['from'] = int(from_ut)
+        params['to'] = int(time.time())
+
+        if category is not None:
+            params['category'] = category
+
+        return self.__request('stat.fetchByPeriod', params)['data']
 
     def send_mail(self, subject, body, recipient, sender=None, category=None):
 
@@ -78,14 +94,12 @@ class InSenderApi(object):
         #else:
         #mg_sender = sender['email'].split("@")[0]
 
-        data = {
-            "email": recipient['email'],
-            "subscriber_title": recipient['name'],
-            "subject": subject,
-            "body_html": body,
-            "category": category
-        }
-
+        data = SortedDict()
+        data['email'] = recipient['email']
+        data['subscriber_title'] = recipient['name']
+        data['subject'] = subject
+        data['body_html'] = body
+        data['category'] = category
         if sender is not None:
             data['reply_to_email'] = sender['email']
 

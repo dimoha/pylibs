@@ -50,6 +50,9 @@ class VoxImplantAPI(object):
         except ValueError:
             raise VoxImplantApiException("bad response: {0}".format(r.text))
 
+        if response is None:
+            raise VoxImplantApiException("response: null")
+
         if 'error' in response:
             raise VoxImplantApiException(response['error']['msg'])
 

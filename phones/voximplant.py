@@ -18,6 +18,10 @@ class VoxImplantApiBadHttpException(VoxImplantApiException):
     pass
 
 
+class VoxImplantNullResponseException(VoxImplantApiException):
+    pass
+
+
 class VoxImplantAPI(object):
     api_url = 'https://api.voximplant.com/platform_api/'
 
@@ -48,10 +52,10 @@ class VoxImplantAPI(object):
         try:
             response = json.loads(r.text)
         except ValueError:
-            raise VoxImplantApiException("bad response: {0}".format(r.text))
+            raise VoxImplantException("bad response: {0}".format(r.text))
 
         if response is None:
-            raise VoxImplantApiException("response: null")
+            raise VoxImplantNullResponseException
 
         if 'error' in response:
             raise VoxImplantApiException(response['error']['msg'])

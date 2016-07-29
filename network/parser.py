@@ -51,7 +51,8 @@ def element_text(e, method='text'):
     et = strip(etree.tostring(e, method=method, encoding="UTF-8"))
     lxml.html.etree.clear_error_log()
     return et
-    
+
+
 def parse_html(htmldata):
     htmldata = htmldata.replace('<![CDATA[', '').replace(']]><', '<')
     ph = lxml.html.fromstring(htmldata)

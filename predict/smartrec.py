@@ -2,6 +2,8 @@
 from pylibs.predict import PredictException
 import requests
 import logging
+import urllib
+import json
 import time
 
 
@@ -34,11 +36,47 @@ class SmartRecWebTenantAlreadyExistException(SmartRecWebException):
 
 
 class SmartRecApi(object):
-    url = 'http://smartrec.pro/'
+    url = 'http://smartrec.pro/api/1.1/json/'
 
-    def __init__(self, token, secret_key):
-        self.token = token
-        self.secret_key = secret_key
+    def __init__(self, api_key):
+        self.api_key = api_key
+
+    def __request(self, method, params):
+        if params is None:
+            params = {}
+        params['apikey'] = self.api_key
+        request_url = '{0}{1}?{2}'.format(self.url, method, urllib.urlencode(params))
+        r = requests.get(request_url)
+        try:
+            response = json.loads(r.text)
+        except ValueError:
+            response = None
+
+        if r.status_code != 200:
+            raise SmartRecApiBadHttpException(r.status_code)
+
+        if response is None:
+            raise SmartRecApiException("bad response: {0}".format(r.text))
+
+        return response
+
+    def get_user_recommendations(self, user_id, tenant_id):
+        params = {
+            'userid': user_id,
+            'tenantid': tenant_id,
+            'requesteditemtype': 'ITEM'
+        }
+        result = self.__request('recommendationsforuser', params)
+        return result['recommendedItems']
+
+    def get_most_viewed(self, tenant_id, time_range='WEEK'):
+        params = {
+            'timeRange': time_range,
+            'tenantid': tenant_id,
+            'requesteditemtype': 'ITEM'
+        }
+        result = self.__request('mostvieweditems', params)
+        return result['recommendedItems']
 
 
 class SmartRecWeb(object):
@@ -100,5 +138,3 @@ class SmartRecWeb(object):
             pass
 
         return True
-
-

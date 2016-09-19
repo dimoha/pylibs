@@ -53,7 +53,6 @@ class GdeSlonApi(object):
             raise GdeSlonApiException("bad response: {0}".format(r.text))
 
         if "error" in response and response['result'] == 'error':
-            print response
             raise GdeSlonApiException(response['error'])
 
         return response

@@ -67,6 +67,7 @@ class SmartRecApi(object):
             'requesteditemtype': 'ITEM'
         }
         result = self.__request('recommendationsforuser', params)
+        logging.info(result)
         return result['recommendedItems']
 
     def get_most_viewed(self, tenant_id, time_range='WEEK'):
@@ -76,6 +77,7 @@ class SmartRecApi(object):
             'requesteditemtype': 'ITEM'
         }
         result = self.__request('mostvieweditems', params)
+        logging.info(result)
         return result['recommendedItems']
 
 

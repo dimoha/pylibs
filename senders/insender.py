@@ -96,7 +96,8 @@ class InSenderApi(object):
 
         data = SortedDict()
         data['email'] = recipient['email']
-        data['subscriber_title'] = recipient['name']
+        if 'name' in recipient:
+            data['subscriber_title'] = recipient['name']
         data['subject'] = subject
         data['body_html'] = body
         data['category'] = category

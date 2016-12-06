@@ -38,7 +38,8 @@ class GdeSlonApi(object):
             data=json.dumps(params),
             headers={
                 'Content-Type': "application/json"
-            }
+            },
+            timeout=30
         )
 
         try:

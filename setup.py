@@ -11,8 +11,5 @@ setup(
     url='http://gitlab.controlstyle.ru/Dimoha/pylibs/',
     install_requires=[
         'requests[security]==2.12.1',
-    ],
-    packages=[
-        'pylibs'
-    ],
+    ]
 )

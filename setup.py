@@ -12,5 +12,5 @@ setup(
         'requests[security]==2.12.1',
     ],
     packages=map(lambda x: "pylibs.{}".format(x), find_packages()),
-    package_dir={'': 'pylibs'}
+    #package_dir={'': 'pylibs'}
 )

@@ -45,12 +45,12 @@ class CallTouchAPI(object):
 
     def get_calls(self, date_from, date_to, only_unique=False):
         params = {
-                "dateFrom": date_from.strftime("%d/%m/%Y"),
-                "dateTo": date_to.strftime("%d/%m/%Y"),
-                'uniqueOnly': only_unique,
-                'page': 1,
-                'limit': 1000
-            }
+            "dateFrom": date_from.strftime("%d/%m/%Y"),
+            "dateTo": date_to.strftime("%d/%m/%Y"),
+            'uniqueOnly': only_unique,
+            'page': 1,
+            'limit': 1000
+        }
 
         calls = self.__request(
             "{0}/calls-diary/calls".format(self.project_id),
@@ -67,8 +67,6 @@ class CallTouchAPI(object):
                     params
                 )
                 all_calls.extend(calls['records'])
-        # if calls['pageTotal'] > 1:
-            # raise NotImplementedError(u"Необходимо добавить пагинацию")
 
         logging.info("Found {0} calls".format(len(all_calls)))
         return all_calls

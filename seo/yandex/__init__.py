@@ -10,8 +10,10 @@ import time
 class YandexException(SeoException):
     pass
 
+
 class YandexAuthorizationException(YandexException):
         pass
+
 
 class Yandex(object):
 

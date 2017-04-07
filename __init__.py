@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+
 class PyLibsException(Exception):
     u'''
     Базовый класс для всех ошибок

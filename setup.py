@@ -13,5 +13,6 @@ setup(
     ],
     #packages=map(lambda x: "pylibs.{}".format(x), find_packages()),
     packages=find_packages(),
-    package_dir={'pylibs': 'pylibs'}
+    #package_dir={'pylibs': 'pylibs'}
+    namespace_packages=['pylibs']
 )

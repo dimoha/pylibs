@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from exception import PyLibsException
+from pylibs import PyLibsException
 
 
 class UtilsException(PyLibsException):

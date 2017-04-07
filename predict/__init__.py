@@ -1,6 +1,6 @@
 
 # -*- coding: utf-8 -*-
-from exception import PyLibsException
+from pylibs import PyLibsException
 
 
 class PredictException(PyLibsException):

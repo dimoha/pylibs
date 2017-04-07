@@ -11,5 +11,5 @@ setup(
     install_requires=[
         'requests[security]==2.12.1',
     ],
-    packages=find_packages(),
+    packages=map(lambda x: "pylibs.".format(x), find_packages()),
 )

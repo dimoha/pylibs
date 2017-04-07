@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='dimoha-pylibs',
+    name='pylibs',
     version='0.0.1',
     description='Pylibs for development',
     author=', '.join((
@@ -11,5 +11,8 @@ setup(
     url='http://gitlab.controlstyle.ru/Dimoha/pylibs/',
     install_requires=[
         'requests[security]==2.12.1',
-    ]
+    ],
+    packages=[
+        'pylibs'
+    ],
 )

@@ -12,5 +12,5 @@ setup(
         'requests[security]==2.12.1',
     ],
     packages=find_packages(),
-    package_dir={'pylibs': 'pylibs'}
+    package_dir={'': 'pylibs'}
 )

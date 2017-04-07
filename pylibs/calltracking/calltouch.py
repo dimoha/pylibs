@@ -47,10 +47,12 @@ class CallTouchAPI(object):
         params = {
             "dateFrom": date_from.strftime("%d/%m/%Y"),
             "dateTo": date_to.strftime("%d/%m/%Y"),
-            'uniqueOnly': only_unique,
             'page': 1,
             'limit': 1000
         }
+
+        if only_unique:
+            params['uniqueOnly'] = only_unique
 
         calls = self.__request(
             "{0}/calls-diary/calls".format(self.project_id),

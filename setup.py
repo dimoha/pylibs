@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from distutils.core import setup
+from setuptools import setup, find_packages
 
 setup(
     name='pylibs',
@@ -11,5 +11,5 @@ setup(
     install_requires=[
         'requests[security]==2.12.1',
     ],
-    packages=['pylibs']
+    packages=find_packages(),
 )

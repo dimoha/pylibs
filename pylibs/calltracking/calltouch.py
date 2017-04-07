@@ -38,18 +38,37 @@ class CallTouchAPI(object):
             else:
                 raise CallTouchAPIException("bad response body: {0}".format(response.text))
 
+        if 'errorCode' in response:
+            raise CallTouchAPIException(response['message'])
+
         return response
 
     def get_calls(self, date_from, date_to, only_unique=False):
+        params = {
+                "dateFrom": date_from.strftime("%d/%m/%Y"),
+                "dateTo": date_to.strftime("%d/%m/%Y"),
+                'uniqueOnly': only_unique,
+                'page': 1,
+                'limit': 1000
+            }
 
         calls = self.__request(
             "{0}/calls-diary/calls".format(self.project_id),
-            {
-                "dateFrom": date_from.strftime("%d/%m/%Y"),
-                "dateTo": date_to.strftime("%d/%m/%Y"),
-                'uniqueOnly': only_unique
-            }
+            params
         )
-        logging.info("Found {0} calls".format(len(calls)))
-        return calls
+        all_calls = calls['records']
+        total_pages = calls['pageTotal']
 
+        for page in range(1, total_pages + 1):
+            if page > 1:
+                params['page'] = page
+                calls = self.__request(
+                    "{0}/calls-diary/calls".format(self.project_id),
+                    params
+                )
+                all_calls.extend(calls['records'])
+        # if calls['pageTotal'] > 1:
+            # raise NotImplementedError(u"Необходимо добавить пагинацию")
+
+        logging.info("Found {0} calls".format(len(all_calls)))
+        return all_calls

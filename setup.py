@@ -11,6 +11,5 @@ setup(
     install_requires=[
         'requests[security]==2.12.1',
     ],
-    packages=find_packages(),
-    package_dir={'': 'pylibs'}
+    packages=find_packages()
 )

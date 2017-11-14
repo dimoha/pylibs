@@ -82,18 +82,12 @@ class GdeSlonApi(object):
 
         return self.__request('orders/', params)
 
-    def postback(self, params):
+    def postback(self, orders):
 
         json_post = {
             "root": {
                 "orders": {
-                    "order": [
-                        {
-                            "order_id": params['id'],
-                            "token": params['lead_id'],
-                            "status": params['status'],
-                        }
-                    ]
+                    "order": orders
                 }
             }
         }

@@ -97,4 +97,5 @@ class GdeSlonApi(object):
         logging.info(json_post)
         r = self.__request('operate/postbacks.json', params=json_post)
         logging.info(r)
-        return r
+
+        return r['result'] == 'success'

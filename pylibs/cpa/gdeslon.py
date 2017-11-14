@@ -67,35 +67,6 @@ class GdeSlonApi(object):
 
         return response
 
-    def __request_xml(self, api_method, params=None):
-        request_url = "{0}{1}".format(self.api_url, api_method)
-        if params is None:
-            params = {}
-
-        params['_gs_at'] = self.api_key
-
-        r = requests.get(
-            request_url,
-            data=params,
-        )
-
-        try:
-            response = ET.fromstring(r.text)
-        except ET.ParseError:
-            response = None
-            logging.error(r.text)
-
-        if r.status_code != 200:
-            raise GdeSlonApiBadHttpException(r.status_code)
-
-        if response is None:
-            raise GdeSlonApiException(u"bad response: {0}".format(r.text))
-
-        if len(response) > 1 and response[1].text == u'failure':
-            raise GdeSlonApiException(response[0].text)
-
-        return response
-
     def get_orders(self, from_dt, period):
 
         params = {
@@ -107,31 +78,23 @@ class GdeSlonApi(object):
 
         return self.__request('orders', params)
 
-    def set_order_status(self, order_id, status):
-
-        try:
-            xml_res = self.__request_xml('states.xml', {
-                'order_ids[]': order_id,
-                'state': status
-            })
-            if xml_res[0].text != 'success':
-                raise GdeSlonApiException(u"set_order_status bad response: {0}".format(xml_res[0].text))
-        except GdeSlonApiException as e:
-            if u'We found no orders' in str(e):
-                raise OrderNotExist(order_id)
-            elif u'Unable to change' in str(e):
-                raise OrderAlreadyPayed(order_id)
-            else:
-                raise
-
     def postback(self, params):
-        payload = {
-            'codes': params['codes'],
-            'order_id': params['id'],
-            'merchant_id': params['merchant_id'],
-            'token': params['lead_id']
+
+        json_post = {
+            "root": {
+                "orders": {
+                    "order": [
+                        {
+                            "order_id": params['id'],
+                            "token": params['lead_id'],
+                            "status": params['status'],
+                        }
+                    ]
+                }
+            }
         }
-        logging.info(payload)
-        r = requests.get('https://www.gdeslon.ru/purchase.js', params=payload)
-        logging.info(r.status_code)
-        return r.status_code == requests.codes.ok
+
+        logging.info(json_post)
+        r = self.__request('operate/postbacks.json', params=json_post)
+        logging.info(r)
+        return r

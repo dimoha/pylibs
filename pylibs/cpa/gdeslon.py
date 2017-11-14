@@ -59,7 +59,7 @@ class GdeSlonApi(object):
         except ValueError:
             response = None
 
-        if response is not None
+        if response is not None:
             if "error" in response and response['result'] == 'error':
                 raise GdeSlonApiException(response['error'])
 

@@ -35,7 +35,7 @@ class GdeSlonApi(object):
 
     def __request(self, api_method=None, params=None):
 
-        request_url = "{0}{1}/".format(self.api_url, api_method)
+        request_url = "{0}{1}".format(self.api_url, api_method)
         logging.debug(request_url)
 
         if params is None:
@@ -76,7 +76,7 @@ class GdeSlonApi(object):
             }
         }
 
-        return self.__request('orders', params)
+        return self.__request('orders/', params)
 
     def postback(self, params):
 

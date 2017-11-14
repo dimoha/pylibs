@@ -56,14 +56,14 @@ class GdeSlonApi(object):
         except ValueError:
             response = None
 
+        if response is not None and "error" in response and response['result'] == 'error':
+            raise GdeSlonApiException(response['error'])
+
         if r.status_code != 200:
             raise GdeSlonApiBadHttpException(r.status_code)
 
         if response is None:
             raise GdeSlonApiException("bad response: {0}".format(r.text))
-
-        if "error" in response and response['result'] == 'error':
-            raise GdeSlonApiException(response['error'])
 
         return response
 

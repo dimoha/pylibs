@@ -51,9 +51,6 @@ class GdeSlonApi(object):
             timeout=30
         )
 
-        logging.info(params)
-        logging.info(r.text)
-
         try:
             response = json.loads(r.text)
         except ValueError:
@@ -63,10 +60,8 @@ class GdeSlonApi(object):
             if "error" in response and response['result'] == 'error':
                 raise GdeSlonApiException(response['error'])
 
-            if "message" in response and response['result'] == 'error':
+            if "message" in response and response['result'] == 'failure':
                 raise GdeSlonApiException(response['message'])
-
-        logging.info(response)
 
         if r.status_code != 200:
             raise GdeSlonApiBadHttpException(r.status_code)

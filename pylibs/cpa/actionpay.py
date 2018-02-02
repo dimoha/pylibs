@@ -56,7 +56,16 @@ class ActionPayApi(object):
         return response
 
     def get_offers(self):
-        return self.__request('apiWmOffers')['result']['offers']
+        offers = []
+        page = 0
+        while True:
+            page += 1
+            logging.info("Load page {0}...".format(page))
+            this_offers = self.__request('apiWmOffers', {'page': page})['result']['offers']
+            offers += this_offers
+            if len(this_offers) == 0:
+                break
+        return offers
 
     def get_my_offers(self):
         return self.__request('apiWmMyOffers')['result']['favouriteOffers']

@@ -3,7 +3,6 @@ from pylibs.cpa import CpaException
 import requests
 import json
 import logging
-import xml.etree.ElementTree as ET
 
 
 class ActionPayException(CpaException):

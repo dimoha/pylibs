@@ -56,4 +56,4 @@ class ActionPayApi(object):
         return response
 
     def get_offers(self):
-        return self.__request('apiWmMyOffers')
+        return self.__request('apiWmMyOffers')['result']

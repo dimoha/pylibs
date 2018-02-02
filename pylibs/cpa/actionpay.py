@@ -30,7 +30,7 @@ class ActionPayApi(object):
         if params is None:
             params = {}
 
-        params['api_key'] = self.api_key
+        params['key'] = self.api_key
         params['format'] = 'json'
 
         r = requests.get(

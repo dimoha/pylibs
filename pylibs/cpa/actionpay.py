@@ -45,7 +45,7 @@ class ActionPayApi(object):
             response = None
 
         if response is not None and "error" in response:
-            raise ActionPayApiException(u"{0}: {1}".format(response['code'], response['text']))
+            raise ActionPayApiException(u"{0}: {1}".format(response['error']['code'], response['error']['text']))
 
         if r.status_code != 200:
             raise ActionPayApiBadHttpException(r.status_code)

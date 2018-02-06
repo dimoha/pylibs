@@ -55,6 +55,9 @@ class ActionPayApi(object):
 
         return response
 
+    def get_wm_links(self, source_id, offer_id):
+        return self.__request('apiWmLinks', {'source': source_id, 'offer': offer_id})['result']['links']
+
     def get_offers(self):
         offers = []
         page = 0

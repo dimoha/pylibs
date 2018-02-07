@@ -104,3 +104,19 @@ class ActionPayApi(object):
                     break
 
         return actions
+
+    def postback(self, target_id, click_id, order_id, price):
+
+        r = requests.get(
+            'https://x.actionpay.ru/ok/{0}.png'.format(target_id),
+            params={
+                'actionpay': click_id,
+                'apid': order_id,
+                'price': price
+
+            },
+            timeout=30
+        )
+
+        if r.status_code != 200:
+            raise ActionPayApiBadHttpException(r.status_code)

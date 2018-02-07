@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 from pylibs.cpa import CpaException
+from pylibs.utils.tools import achunk
 import requests
 import json
 import logging
+from datetime import timedelta, datetime
 
 
 class ActionPayException(CpaException):
@@ -73,14 +75,31 @@ class ActionPayApi(object):
     def get_my_offers(self):
         return self.__request('apiWmMyOffers')['result']['favouriteOffers']
 
+    def get_days_in_period(self, date_from, date_to):
+        return [date_from + timedelta(days=i) for i in range((date_to - date_from).days + 1)]
+
     def get_orders(self, from_date, to_date):
+
+        days = self.get_days_in_period(from_date, to_date)
+
         actions = []
-        page = 0
-        while True:
-            page += 1
-            logging.info("Load page {0}...".format(page))
-            this_actions = self.__request('apiWmStats', {'page': page, 'from': str(from_date), 'till': str(to_date)})['result']['actions']
-            actions += this_actions
-            if len(this_actions) == 0:
-                break
+        for days_group in achunk(days, 7):
+            page = 0
+            while True:
+                page += 1
+                df = str(days_group[0])
+                dt = str(days_group[-1])
+                logging.info("Load page {0} ({1}-{2}) ...".format(page, df, dt))
+
+                this_actions = self.__request('apiWmStats', {
+                    'page': page,
+                    'itemsPerPage': 200,
+                    'from': df,
+                    'till': dt
+                })['result']['actions']
+
+                actions += this_actions
+                if len(this_actions) == 0:
+                    break
+
         return actions

@@ -6,6 +6,10 @@ from pylibs.utils.text import toUnicode
 import base64
 
 
+def achunk(vals, limit):
+    return [vals[i: i + limit] for i in xrange(0, len(vals), limit)]
+
+
 def kill_process(mask):
     c = 0
     tPid = str(os.getpid())

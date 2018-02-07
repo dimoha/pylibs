@@ -81,6 +81,7 @@ class ActionPayApi(object):
     def get_orders(self, from_date, to_date):
 
         days = self.get_days_in_period(from_date, to_date)
+        pp = 200
 
         actions = []
         for days_group in achunk(days, 7):
@@ -93,13 +94,13 @@ class ActionPayApi(object):
 
                 this_actions = self.__request('apiWmStats', {
                     'page': page,
-                    'itemsPerPage': 200,
+                    'itemsPerPage': pp,
                     'from': df,
                     'till': dt
                 })['result']['actions']
 
                 actions += this_actions
-                if len(this_actions) == 0:
+                if len(this_actions) < pp:
                     break
 
         return actions

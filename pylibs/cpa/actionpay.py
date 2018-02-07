@@ -89,7 +89,7 @@ class ActionPayApi(object):
                 page += 1
                 df = str(days_group[0])
                 dt = str(days_group[-1])
-                logging.info("Load page {0} ({1}-{2}) ...".format(page, df, dt))
+                logging.info("Load page {0} ({1} - {2}) ...".format(page, df, dt))
 
                 this_actions = self.__request('apiWmStats', {
                     'page': page,

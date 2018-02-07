@@ -72,3 +72,6 @@ class ActionPayApi(object):
 
     def get_my_offers(self):
         return self.__request('apiWmMyOffers')['result']['favouriteOffers']
+
+    def get_orders(self, from_dt, to_dt):
+        return []

@@ -71,12 +71,12 @@ class GdeSlonApi(object):
 
         return response
 
-    def get_orders(self, from_dt, period):
+    def get_orders(self, from_dt, to_dt):
 
         params = {
             "created_at": {
-                "date": from_dt,
-                "period": period
+                "date": str(from_dt),
+                "period": (to_dt - from_dt).days + 1
             }
         }
 

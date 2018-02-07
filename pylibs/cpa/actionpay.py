@@ -73,5 +73,14 @@ class ActionPayApi(object):
     def get_my_offers(self):
         return self.__request('apiWmMyOffers')['result']['favouriteOffers']
 
-    def get_orders(self, from_dt, to_dt):
-        return []
+    def get_orders(self, from_date, to_date):
+        actions = []
+        page = 0
+        while True:
+            page += 1
+            logging.info("Load page {0}...".format(page))
+            this_actions = self.__request('apiWmStats', {'page': page, 'from': str(from_date), 'till': str(to_date)})['result']['actions']
+            actions += this_actions
+            if len(this_actions) == 0:
+                break
+        return actions

@@ -138,3 +138,6 @@ class ActionPayApi(object):
 
         if r.status_code != 200:
             raise ActionPayApiBadHttpException(r.status_code)
+
+        if r.text != 'ok':
+            raise ActionPayApiException("Bad response in postback: {0}".format(r.text))

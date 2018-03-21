@@ -32,7 +32,7 @@ class CallTouchAPI(object):
             response = json.loads(response.text)
         except ValueError:
             if response.status_code != 200:
-                raise CallTouchAPIException("Bad status code: {0}".format(response.status_code))
+                raise CallTouchAPIException("Bad status code: {0}, Body: {1}".format(response.status_code, response.text))
             elif response.text.strip() == '':
                 raise CallTouchAPIException("empty response")
             else:

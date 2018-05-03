@@ -14,9 +14,10 @@ class CallTouchAPI(object):
 
     API_URL = 'http://api.calltouch.ru/calls-service/RestAPI/'
 
-    def __init__(self, project_id, api_key):
+    def __init__(self, project_id, api_key, proxies=None):
         self.project_id = project_id
         self.api_key = api_key
+        self.proxies = proxies
 
     def __request(self, method, params):
         request_url = "{0}{1}?clientApiId={2}&{3}".format(
@@ -26,7 +27,7 @@ class CallTouchAPI(object):
             urllib.urlencode(params)
         )
         logging.debug(request_url)
-        response = requests.get(request_url, timeout=120)
+        response = requests.get(request_url, timeout=120, proxies=self.proxies)
 
         try:
             response = json.loads(response.text)

@@ -26,7 +26,7 @@ class CallTouchAPI(object):
             urllib.urlencode(params)
         )
         logging.debug(request_url)
-        response = requests.get(request_url, timeout=30)
+        response = requests.get(request_url, timeout=120)
 
         try:
             response = json.loads(response.text)

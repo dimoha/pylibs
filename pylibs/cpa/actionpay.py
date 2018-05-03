@@ -38,7 +38,7 @@ class ActionPayApi(object):
         r = requests.get(
             request_url,
             params=params,
-            timeout=30
+            timeout=120
         )
 
         try:

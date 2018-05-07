@@ -19,6 +19,10 @@ class ActionPayApiBadHttpException(ActionPayApiException):
     pass
 
 
+class OfferLockedException(ActionPayApiException):
+    pass
+
+
 class ActionPayApi(object):
     api_url = 'https://api.actionpay.net/ru-ru/{api_method}/'
 
@@ -58,7 +62,14 @@ class ActionPayApi(object):
         return response
 
     def get_wm_links(self, source_id, offer_id):
-        return self.__request('apiWmLinks', {'source': source_id, 'offer': offer_id})['result']['links']
+        try:
+            return self.__request('apiWmLinks', {'source': source_id, 'offer': offer_id})['result']['links']
+        except ActionPayApiException as e:
+            err_msg = str(e)
+            if u'ссылки по этому офферу заблокированы' in err_msg:
+                raise OfferLockedException(err_msg)
+            else:
+                raise
 
     def get_offers(self):
         offers = []
